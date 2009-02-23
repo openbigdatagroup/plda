@@ -24,11 +24,11 @@ Parallel lda must be run in linux environment with mpich2-1.0.8.
     * Other machines act as slave and must connect to the master
       * `mpd --daemon -h serverHostName -p 55555`
     * Check whether the environment is setup successfully: on master, run `mpdtrace`, you will see all the slaves. If no machines show up, you must check your mpi setup and refer to mpich2 user manual.
-  * Download glda package and extract and run `make mpi_glda` in its directory. You will see a new binary generated `mpi_glda`. We use mpich2 builtin compiler mpicxx to compile, it is a wrap of g++.
+  * Download plda package and extract and run `make mpi_plda` in its directory. You will see a new binary generated `mpi_plda`. We use mpich2 builtin compiler mpicxx to compile, it is a wrap of g++.
 
 = Train parallelly=
   * Prepare data the same as the single processor version.
-  * `mpiexec -n 5 ./mpi_glda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --total_iterations 150`
+  * `mpiexec -n 5 ./mpi_plda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --total_iterations 150`
   * The input and output are the same with single processor version. 
 
 = Parallel Training Performance =
