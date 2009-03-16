@@ -87,6 +87,7 @@ void LDASampler::GenerateTopicDistributionForWord(
     bool train_model,
     vector<double>* distribution) const {
   int num_topics = model_->num_topics();
+  int num_words = model_->num_words();
   distribution->clear();
   distribution->reserve(num_topics);
 
@@ -107,7 +108,7 @@ void LDASampler::GenerateTopicDistributionForWord(
     distribution->push_back(
         (topic_word_factor + beta_) *
         (document_topic_factor + alpha_) /
-        (global_topic_factor + num_topics * beta_));
+        (global_topic_factor + num_words * beta_));
   }
 }
 
