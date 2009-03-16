@@ -1,7 +1,7 @@
 CC=g++
 MPICC=mpicxx
 
-CFLAGS=-O3 -Wall
+CFLAGS=-O3 -Wall -Wno-sign-compare
 
 all: lda infer mpi_lda
 
