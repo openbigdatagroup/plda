@@ -59,8 +59,6 @@ void LDAAccumulativeModel::AccumulateModel(const LDAModel& source_model) {
 }
 
 void LDAAccumulativeModel::AverageModel(int num_accumulations) {
-  size_t vocab_size = topic_distributions_.size();
-
   for (map<string, TopicProbDistribution>::iterator iter =
            topic_distributions_.begin();
        iter != topic_distributions_.end();
