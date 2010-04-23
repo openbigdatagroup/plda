@@ -21,15 +21,7 @@ a 2 is 1 b 1 character 1 after 1
   * Download [http://plda.googlecode.com/files/test_data.txt test_data.txt] as training sample and put it under plda/testdata/ directory.
   * Train
     * `./lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --burn_in_iterations 100 --total_iterations 150`
-  * After training completes, you will see a file `/tmp/lda_model.txt` generated. This file stores the training result. Each line is the topic distribution of a word. The first element is the word string, then its occurrence count within each topic. For example: in the following model, the last line means that the word "word8" occured 174 times within training corpus, 35.92 times belongs to the first topic and 138.08 times belongs to the second topic.(Because it is an average value, it might be a float) .
-{{{
-word0 153 0
-word1 170 0
-word2 161 0
-word6 35.94 124.06
-word7 46.74 135.26
-word8 35.92 138.08
-}}}
+  * After training completes, you will see a file `/tmp/lda_model.txt` generated. This file stores the training result. Each line is the topic distribution of a word. The first element is the word string, then its occurrence count within each topic. You could use view_model.py to convert the model to a readable text.
   * Infer unseen documents:
     * `./infer --alpha 0.1 --beta 0.01 --inference_data_file testdata/test_data.txt --inference_result_file /tmp/inference_result.txt --model_file /tmp/lda_model.txt --total_iterations 15 --burn_in_iterations 10`
 = Command-line flags =
