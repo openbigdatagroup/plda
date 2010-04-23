@@ -33,7 +33,7 @@ namespace learning_lda {
 // by the number of iterations after the burn-in period.
 class LDAAccumulativeModel {
  public:
-  LDAAccumulativeModel(int num_topics);
+  LDAAccumulativeModel(int num_topics, int vocab_size);
   ~LDAAccumulativeModel() {}
 
   // Accumulate a model into accumulative_topic_distributions_ and
@@ -46,7 +46,7 @@ class LDAAccumulativeModel {
 
   // Returns the topic distribution for word.
   const TopicProbDistribution& GetWordTopicDistribution(
-      const string& word) const;
+      int word) const;
 
   // Returns the global topic distribution.
   const TopicProbDistribution& GetGlobalTopicDistribution() const;
@@ -59,13 +59,13 @@ class LDAAccumulativeModel {
 
   // Output accumulative_topic_distributions_ in human-readable
   // format.
-  void AppendAsString(std::ostream& out) const;
+  void AppendAsString(const map<string, int>& word_index_map, std::ostream& out) const;
 
  private:
   // Increments the topic count for a particular word (or decrements, for
   // negative values of count).  Creates the word distribution if it doesn't
   // exist, even if the count is 0.
-  void IncrementTopic(const string& word,
+  void IncrementTopic(int word,
                       int topic,
                       int64 count);
 
@@ -77,7 +77,7 @@ class LDAAccumulativeModel {
 
   // The summation of P(word|topic) matrices and P(topic) vectors
   // estimated by Gibbs sampling iterations after the burn-in period.
-  map<string, TopicProbDistribution> topic_distributions_;
+  vector<TopicProbDistribution> topic_distributions_;
   TopicProbDistribution global_distribution_;
 };
 

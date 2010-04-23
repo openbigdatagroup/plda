@@ -3,11 +3,11 @@ For details, please see wiki page:
     http://code.google.com/p/plda/wiki/PLDAManual
 
 Single Processor Version:
-  * tar xvfz plda-2.0.tar.gz
+  * tar xvfz plda-3.0.tar.gz
   * cd plda
   * make all
 Parallel Version:
   * Install mpich2
-  * tar xvfz plda-2.0.tar.gz
+  * tar xvfz plda-3.0.tar.gz
   * cd plda
   * make mpi_plda

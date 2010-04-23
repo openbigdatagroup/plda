@@ -49,7 +49,7 @@ class LDADocument {
     void SetTopic(int new_topic);
 
     // Returns the word of the current occurrence.
-    const string& Word();
+    int Word();
 
    private:
     // If the current word has no occurrences, advance until reaching a word
@@ -76,13 +76,16 @@ class LDADocument {
   }
 
   // Returns the document's topic occurrence counts.
-  const TopicCountDistribution& topic_distribution() const {
+  const vector<int64>& topic_distribution() const {
     return topic_distribution_;
   }
 
- private:
+  void ResetWordIndex(const map<string, int>& word_index_map);
+
+  string DebugString();
+ protected:
   DocumentWordTopicsPB*  topic_assignments_;
-  TopicCountDistribution topic_distribution_;
+  vector<int64> topic_distribution_;
 
   // Count topic occurrences in topic_assignments_ and stores the
   // result in topic_distribution_.

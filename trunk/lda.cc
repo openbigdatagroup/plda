@@ -14,7 +14,7 @@
 /*
   An example running of this program:
 
-  ./glda           \
+  ./lda           \
   --num_topics 2 \
   --alpha 0.1    \
   --beta 0.01                                           \
@@ -28,6 +28,7 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <map>
 
 #include "common.h"
 #include "document.h"
@@ -42,11 +43,14 @@ using std::ifstream;
 using std::ofstream;
 using std::istringstream;
 using std::set;
+using std::map;
 
 int LoadAndInitTrainingCorpus(const string& corpus_file,
                               int num_topics,
-                              LDACorpus* corpus) {
+                              LDACorpus* corpus,
+                              map<string, int>* word_index_map) {
   corpus->clear();
+  word_index_map->clear();
   ifstream fin(corpus_file.c_str());
   string line;
   while (getline(fin, line)) {  // Each line is a training document.
@@ -58,18 +62,22 @@ int LoadAndInitTrainingCorpus(const string& corpus_file,
       DocumentWordTopicsPB document;
       string word;
       int count;
-      set<string> words_in_docuemnt;
       while (ss >> word >> count) {  // Load and init a document.
         vector<int32> topics;
         for (int i = 0; i < count; ++i) {
           topics.push_back(RandInt(num_topics));
         }
-        document.add_wordtopics(word, topics);
-        words_in_docuemnt.insert(word);
+        int word_index;
+        map<string, int>::const_iterator iter = word_index_map->find(word);
+        if (iter == word_index_map->end()) {
+          word_index = word_index_map->size();
+          (*word_index_map)[word] = word_index;
+        } else {
+          word_index = iter->second;
+        }
+        document.add_wordtopics(word, word_index, topics);
       }
-      if (words_in_docuemnt.size() > 0) {
-        corpus->push_back(new LDADocument(document, num_topics));
-      }
+      corpus->push_back(new LDADocument(document, num_topics));
     }
   }
   return corpus->size();
@@ -105,24 +113,27 @@ int main(int argc, char** argv) {
   }
   srand(time(NULL));
   LDACorpus corpus;
+  map<string, int> word_index_map;
   CHECK_GT(LoadAndInitTrainingCorpus(flags.training_data_file_,
                                      flags.num_topics_,
-                                     &corpus), 0);
-  LDAModel model(flags.num_topics_);
-  LDAAccumulativeModel accum_model(flags.num_topics_);
+                                     &corpus, &word_index_map), 0);
+  LDAModel model(flags.num_topics_, word_index_map);
+  LDAAccumulativeModel accum_model(flags.num_topics_, word_index_map.size());
   LDASampler sampler(flags.alpha_, flags.beta_, &model, &accum_model);
 
   sampler.InitModelGivenTopics(corpus);
 
   for (int iter = 0; iter < flags.total_iterations_; ++iter) {
     std::cout << "Iteration " << iter << " ...\n";
-    double loglikelihood = 0;
-    for (list<LDADocument*>::const_iterator iterator = corpus.begin();
-       iterator != corpus.end();
-       ++iterator) {
-      loglikelihood += sampler.LogLikelihood(*iterator);
+    if (flags.compute_likelihood_ == "true") {
+      double loglikelihood = 0;
+      for (list<LDADocument*>::const_iterator iterator = corpus.begin();
+           iterator != corpus.end();
+           ++iterator) {
+        loglikelihood += sampler.LogLikelihood(*iterator);
+      }
+      std::cout << "Loglikelihood: " << loglikelihood << std::endl;
     }
-    std::cout << "Loglikelihood: " << loglikelihood << std::endl;
     sampler.DoIteration(&corpus, true, iter < flags.burn_in_iterations_);
   }
   accum_model.AverageModel(
@@ -131,7 +142,7 @@ int main(int argc, char** argv) {
   FreeCorpus(&corpus);
 
   std::ofstream fout(flags.model_file_.c_str());
-  accum_model.AppendAsString(fout);
+  accum_model.AppendAsString(word_index_map, fout);
 
   return 0;
 }

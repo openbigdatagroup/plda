@@ -37,6 +37,7 @@ class LDACmdLineFlags {
   std::string inference_result_file_;
   int         burn_in_iterations_;
   int         total_iterations_;
+  std::string compute_likelihood_;
 };
 
 }  // namespace learning_lda
