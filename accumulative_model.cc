@@ -22,10 +22,15 @@
 
 namespace learning_lda {
 
-LDAAccumulativeModel::LDAAccumulativeModel(int num_topics) {
+LDAAccumulativeModel::LDAAccumulativeModel(int num_topics, int vocab_size) {
   CHECK_LT(1, num_topics);
+  CHECK_LT(1, vocab_size);
   global_distribution_.resize(num_topics, 0);
   zero_distribution_.resize(num_topics, 0);
+  topic_distributions_.resize(vocab_size);
+  for (int i = 0; i < vocab_size; ++i) {
+    topic_distributions_[i].resize(num_topics, 0);
+  }
 }
 
 // Accumulate a model into accumulative_topic_distributions_ and
@@ -34,18 +39,7 @@ void LDAAccumulativeModel::AccumulateModel(const LDAModel& source_model) {
   CHECK_EQ(num_topics(), source_model.num_topics());
   for (LDAModel::Iterator iter(&source_model); !iter.Done(); iter.Next()) {
     const TopicCountDistribution& source_dist = iter.Distribution();
-    TopicProbDistribution* dest_dist = NULL;
-
-    map<string, TopicProbDistribution>::iterator target_distribution =
-        topic_distributions_.find(iter.Word());
-
-    if (target_distribution == topic_distributions_.end()) {
-      topic_distributions_[iter.Word()].resize(num_topics());
-      dest_dist = &(topic_distributions_[iter.Word()]);
-    } else {
-      dest_dist = &(target_distribution->second);
-    }
-
+    TopicProbDistribution* dest_dist = &(topic_distributions_[iter.Word()]);
     CHECK_EQ(num_topics(), source_dist.size());
     for (int k = 0; k < num_topics(); ++k) {
       (*dest_dist)[k] += static_cast<double>(source_dist[k]);
@@ -59,11 +53,11 @@ void LDAAccumulativeModel::AccumulateModel(const LDAModel& source_model) {
 }
 
 void LDAAccumulativeModel::AverageModel(int num_accumulations) {
-  for (map<string, TopicProbDistribution>::iterator iter =
+  for (vector<TopicProbDistribution>::iterator iter =
            topic_distributions_.begin();
        iter != topic_distributions_.end();
        ++iter) {
-    TopicProbDistribution& dist = iter->second;
+    TopicProbDistribution& dist = *iter;
     for (int k = 0; k < num_topics(); ++k) {
       dist[k] /= num_accumulations;
     }
@@ -74,13 +68,8 @@ void LDAAccumulativeModel::AverageModel(int num_accumulations) {
 }
 
 const TopicProbDistribution& LDAAccumulativeModel::GetWordTopicDistribution(
-    const string& word) const {
-  map<string, TopicProbDistribution>::const_iterator target_distribution =
-      topic_distributions_.find(word);
-  if (target_distribution == topic_distributions_.end()) {
-    return zero_distribution_;
-  }
-  return target_distribution->second;
+    int word) const {
+  return topic_distributions_[word];
 }
 
 const TopicProbDistribution&
@@ -88,14 +77,17 @@ LDAAccumulativeModel::GetGlobalTopicDistribution() const {
   return global_distribution_;
 }
 
-void LDAAccumulativeModel::AppendAsString(std::ostream& out) const {
-  for (map<string, TopicProbDistribution>::const_iterator iter =
-           topic_distributions_.begin();
-       iter != topic_distributions_.end();
-       ++iter) {
-    out << iter->first << "\t";
+void LDAAccumulativeModel::AppendAsString(const map<string, int>& word_index_map,
+                                          std::ostream& out) const {
+  vector<string> index_word_map(word_index_map.size());
+  for (map<string, int>::const_iterator iter = word_index_map.begin();
+       iter != word_index_map.end(); ++iter) {
+    index_word_map[iter->second] = iter->first;
+  }
+  for (int i = 0; i < topic_distributions_.size(); ++i) {
+    out << index_word_map[i] << "\t";
     for (int topic = 0; topic < num_topics(); ++topic) {
-      out << (iter->second)[topic]
+      out << topic_distributions_[i][topic]
           << ((topic < num_topics() - 1) ? " " : "\n");
     }
   }

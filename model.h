@@ -55,24 +55,29 @@ class LDAModel {
     bool Done() const;
 
     // Returns the current word.
-    const string& Word() const;
+    int Word() const;
 
     // Returns the current word's distribution.
     const TopicCountDistribution& Distribution() const;
 
    private:
     const LDAModel* parent_;
-    map<string, TopicCountDistribution>::const_iterator iterator_;
+    int iterator_;
   };
   friend class Iterator;
 
+  LDAModel(int num_topic, const map<string, int>& word_index_map);
 
-  explicit LDAModel(int num_topics);
+  // Read word topic distribution and global distribution from iframe.
+  // Return a map from word string to index. Intenally we use int to represent
+  // each word.
+  LDAModel(std::istream& in, map<string, int>* word_index_map);
+
   ~LDAModel() {}
 
   // Returns the topic distribution for word.
   const TopicCountDistribution& GetWordTopicDistribution(
-      const string& word) const;
+      int word) const;
 
   // Returns the global topic distribution.
   const TopicCountDistribution& GetGlobalTopicDistribution() const;
@@ -80,12 +85,12 @@ class LDAModel {
   // Increments the topic count for a particular word (or decrements, for
   // negative values of count).  Creates the word distribution if it doesn't
   // exist, even if the count is 0.
-  void IncrementTopic(const string& word,
+  void IncrementTopic(int word,
                       int topic,
                       int64 count);
 
   // Reassigns count occurrences of a word from old_topic to new_topic.
-  void ReassignTopic(const string& word,
+  void ReassignTopic(int word,
                      int old_topic,
                      int new_topic,
                      int64 count);
@@ -96,33 +101,30 @@ class LDAModel {
   // Returns the number of words in the model (not including the global word).
   int num_words() const { return topic_distributions_.size(); }
 
-  // Returns true if the given word is in the vocabulary of the model.
-  bool IsWordInVocabulary(const string word) const {
-    return topic_distributions_.find(word) != topic_distributions_.end();
-  }
-
-  // Checks that the model is sane.
-  bool IsValid() const;
-
   // Output topic_distributions_ into human readable format.
   void AppendAsString(std::ostream& out) const;
 
-  // Read word topic distribution and global distribution from iframe.
-  void Load(std::istream& in);
+
+ protected:
+  // The dataset which keep all the model memory.
+  vector<int64> memory_alloc_;
  private:
   // If users query a word for its topic distribution via
   // GetWordTopicDistribution, but this word does not appear in the
   // training corpus, GetWordTopicDistribution returns
   // zero_distribution_.
-  TopicCountDistribution zero_distribution_;
+  vector<int64> zero_distribution_;
+
 
   // topic_distributions_["word"][k] counts the number of times that
   // word "word" and assigned topic k by a Gibbs sampling iteration.
-  map<string, TopicCountDistribution> topic_distributions_;
+  vector<TopicCountDistribution> topic_distributions_;
 
   // global_distribution_[k] is the number of words in the training
   // corpus that are assigned by topic k.
   TopicCountDistribution global_distribution_;
+
+  map<string, int> word_index_map_;
 };
 
 }  // namespace learning_lda

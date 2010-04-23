@@ -82,7 +82,7 @@ void LDASampler::SampleNewTopicsForDocument(LDADocument* document,
 
 void LDASampler::GenerateTopicDistributionForWord(
     const LDADocument& document,
-    const string& word,
+    int word,
     int current_word_topic,
     bool train_model,
     vector<double>* distribution) const {
@@ -117,7 +117,7 @@ double LDASampler::LogLikelihood(LDADocument* document) const {
   const int num_topics(model_->num_topics());
 
   // Compute P(z|d) for the given document and all topics.
-  const TopicCountDistribution& document_topic_cooccurrences(
+  const vector<int64>& document_topic_cooccurrences(
       document->topic_distribution());
   CHECK_EQ(num_topics, document_topic_cooccurrences.size());
   int64 document_length = 0;
@@ -164,15 +164,5 @@ double LDASampler::LogLikelihood(LDADocument* document) const {
   }
   return log_likelihood;
 }
-
-bool LDASampler::IsValid() const {
-  // Check model_.
-  if (model_ == NULL || !model_->IsValid()) {
-    LOG(ERROR) << "Invalid model_";
-    return false;
-  }
-  return true;
-}
-
 
 }  // namespace learning_lda

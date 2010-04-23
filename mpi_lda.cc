@@ -14,7 +14,7 @@
 /*
   An example running of this program:
 
-  mpiexec -n 2 ./mpi_glda           \
+  mpiexec -n 2 ./mpi_lda           \
   --num_topics 2 \
   --alpha 0.1    \
   --beta 0.01                                           \
@@ -89,31 +89,24 @@ void AllReduceTopicDistribution(int64* buf, int count) {
   }
 }
 
-// Allreduce Sum the LDAModel. We need sorted word list and word_index_map
-// because we need to use a int index to represent a word so that we could
-// convert WordTopicDistribution into a two-dimensional int64 array.
-void AllReduceModel(const LDACorpus& corpus, const vector<string>& sorted_words,
-                    map<string, int>& word_index_map, LDAModel* model) {
-  int num_words = sorted_words.size();
-  int num_topics = model->num_topics();
-  vector<int64> buff(num_words * num_topics, 0);
-  for (list<LDADocument*>::const_iterator iter = corpus.begin();
-       iter != corpus.end();
-       ++iter) {
-    LDADocument* document = *iter;
-    for (LDADocument::WordOccurrenceIterator iter2(document);
-         !iter2.Done(); iter2.Next()) {
-      ++buff[word_index_map[iter2.Word()]* num_topics + iter2.Topic()];
-    }
+class ParallelLDAModel : public LDAModel {
+ public:
+  ParallelLDAModel(int num_topic, const map<string, int>& word_index_map)
+      : LDAModel(num_topic, word_index_map) {
   }
-  AllReduceTopicDistribution(&buff[0], num_topics * num_words);
-  for (int i = 0; i < num_words; ++i) {
-    int64* start_addr = &buff[i * num_topics];
-    for (int j = 0; j < num_topics; ++j) {
-      model->IncrementTopic(sorted_words[i], j, start_addr[j]);
+  void ComputeAndAllReduce(const LDACorpus& corpus) {
+    for (list<LDADocument*>::const_iterator iter = corpus.begin();
+         iter != corpus.end();
+         ++iter) {
+      LDADocument* document = *iter;
+      for (LDADocument::WordOccurrenceIterator iter2(document);
+           !iter2.Done(); iter2.Next()) {
+        IncrementTopic(iter2.Word(), iter2.Topic(), 1);
+      }
     }
+    AllReduceTopicDistribution(&memory_alloc_[0], memory_alloc_.size());
   }
-}
+};
 
 int DistributelyLoadAndInitTrainingCorpus(
     const string& corpus_file,
@@ -140,7 +133,7 @@ int DistributelyLoadAndInitTrainingCorpus(
           for (int i = 0; i < count; ++i) {
             topics.push_back(RandInt(num_topics));
           }
-          document.add_wordtopics(word, topics);
+          document.add_wordtopics(word, -1, topics);
           words_in_document.insert(word);
           words->insert(word);
         }
@@ -176,6 +169,7 @@ void FreeCorpus(LDACorpus* corpus) {
 int main(int argc, char** argv) {
   using learning_lda::LDACorpus;
   using learning_lda::LDAModel;
+  using learning_lda::ParallelLDAModel;
   using learning_lda::LDASampler;
   using learning_lda::DistributelyLoadAndInitTrainingCorpus;
   using learning_lda::LDACmdLineFlags;
@@ -209,30 +203,36 @@ int main(int argc, char** argv) {
   for (int i = 0; i < sorted_words.size(); ++i) {
     word_index_map[sorted_words[i]] = i;
   }
+  for (LDACorpus::iterator iter = corpus.begin(); iter != corpus.end();
+       ++iter) {
+    (*iter)->ResetWordIndex(word_index_map);
+  }
 
   for (int iter = 0; iter < flags.total_iterations_; ++iter) {
     if (myid == 0) {
       std::cout << "Iteration " << iter << " ...\n";
     }
-    LDAModel model(flags.num_topics_);
-    AllReduceModel(corpus, sorted_words, word_index_map, &model);
+    ParallelLDAModel model(flags.num_topics_, word_index_map);
+    model.ComputeAndAllReduce(corpus);
     LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
-    double loglikelihood_local = 0;
-    double loglikelihood_global = 0;
-    for (list<LDADocument*>::const_iterator iter = corpus.begin();
-       iter != corpus.end();
-       ++iter) {
-      loglikelihood_local += sampler.LogLikelihood(*iter);
-    }
-    MPI_Allreduce(&loglikelihood_local, &loglikelihood_global, 1, MPI_DOUBLE,
-                  MPI_SUM, MPI_COMM_WORLD);
-    if (myid == 0) {
-      std::cout << "Loglikelihood: " << loglikelihood_global << std::endl;
+    if (flags.compute_likelihood_ == "true") {
+      double loglikelihood_local = 0;
+      double loglikelihood_global = 0;
+      for (list<LDADocument*>::const_iterator iter = corpus.begin();
+           iter != corpus.end();
+           ++iter) {
+        loglikelihood_local += sampler.LogLikelihood(*iter);
+      }
+      MPI_Allreduce(&loglikelihood_local, &loglikelihood_global, 1, MPI_DOUBLE,
+                    MPI_SUM, MPI_COMM_WORLD);
+      if (myid == 0) {
+        std::cout << "Loglikelihood: " << loglikelihood_global << std::endl;
+      }
     }
     sampler.DoIteration(&corpus, true, false);
   }
-  LDAModel model(flags.num_topics_);
-  AllReduceModel(corpus, sorted_words, word_index_map, &model);
+  ParallelLDAModel model(flags.num_topics_, word_index_map);
+  model.ComputeAndAllReduce(corpus);
   if (myid == 0) {
     std::ofstream fout(flags.model_file_.c_str());
     model.AppendAsString(fout);

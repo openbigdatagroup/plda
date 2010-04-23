@@ -31,6 +31,7 @@ LDACmdLineFlags::LDACmdLineFlags() {
   model_file_ = "";
   burn_in_iterations_ = -1;
   total_iterations_ = -1;
+  compute_likelihood_ = "false";
 }
 
 void LDACmdLineFlags::ParseCmdFlags(int argc, char** argv) {
@@ -62,7 +63,11 @@ void LDACmdLineFlags::ParseCmdFlags(int argc, char** argv) {
     } else if (0 == strcmp(argv[i], "--total_iterations")) {
       std::istringstream(argv[i+1]) >> total_iterations_;
       ++i;
+    } else if (0 == strcmp(argv[i], "--compute_likelihood")) {
+      compute_likelihood_ = argv[i+1];
+      ++i;
     }
+
   }
 }
 
@@ -123,6 +128,10 @@ bool LDACmdLineFlags::CheckParallelTrainingValidity() {
   }
   if (total_iterations_ <= 0) {
     std::cerr << "total_iterations must > 0.\n";
+    ret = false;
+  }
+  if (compute_likelihood_ != "true" && compute_likelihood_ != "false") {
+    std::cerr << "compute_likelihood must be true or false.\n";
     ret = false;
   }
   return ret;

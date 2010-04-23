@@ -53,9 +53,9 @@ int main(int argc, char** argv) {
     return -1;
   }
   srand(time(NULL));
-  LDAModel model(0);
+  map<string, int> word_index_map;
   ifstream model_fin(flags.model_file_.c_str());
-  model.Load(model_fin);
+  LDAModel model(model_fin, &word_index_map);
   LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
   ifstream fin(flags.inference_data_file_.c_str());
   ofstream out(flags.inference_result_file_.c_str());
@@ -74,8 +74,9 @@ int main(int argc, char** argv) {
         for (int i = 0; i < count; ++i) {
           topics.push_back(RandInt(model.num_topics()));
         }
-        if (model.IsWordInVocabulary(word)) {
-          document_topics.add_wordtopics(word, topics);
+        map<string, int>::const_iterator iter = word_index_map.find(word);
+        if (iter != word_index_map.end()) {
+          document_topics.add_wordtopics(word, iter->second, topics);
         }
       }
       LDADocument document(document_topics, model.num_topics());
@@ -83,7 +84,7 @@ int main(int argc, char** argv) {
       for (int iter = 0; iter < flags.total_iterations_; ++iter) {
         sampler.SampleNewTopicsForDocument(&document, false);
         if (iter >= flags.burn_in_iterations_) {
-          const TopicCountDistribution& document_distribution =
+          const vector<int64>& document_distribution =
               document.topic_distribution();
           for (int i = 0; i < document_distribution.size(); ++i) {
             prob_dist[i] += document_distribution[i];

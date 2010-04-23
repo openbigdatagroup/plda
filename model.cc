@@ -24,7 +24,7 @@ namespace learning_lda {
 // map.
 LDAModel::Iterator::Iterator(const LDAModel* parent)
     : parent_(parent),
-      iterator_(parent->topic_distributions_.begin()) { }
+      iterator_(0) { }
 
 LDAModel::Iterator::~Iterator() { }
 
@@ -34,34 +34,41 @@ void LDAModel::Iterator::Next() {
 }
 
 bool LDAModel::Iterator::Done() const {
-  return iterator_ == parent_->topic_distributions_.end();
+  return iterator_ == parent_->topic_distributions_.size();
 }
 
-const string& LDAModel::Iterator::Word() const {
+int LDAModel::Iterator::Word() const {
   CHECK(!Done());
-  return iterator_->first;
+  return iterator_;
 }
 
 // Returns the current word's distribution.
 const TopicCountDistribution& LDAModel::Iterator::Distribution() const {
   CHECK(!Done());
-  return parent_->GetWordTopicDistribution(Word());
+  return parent_->GetWordTopicDistribution(iterator_);
 }
 
-LDAModel::LDAModel(int num_topics) {
-  global_distribution_.resize(num_topics, 0);
-  zero_distribution_.resize(num_topics, 0);
-  CHECK(IsValid());
+LDAModel::LDAModel(
+    int num_topics, const map<string, int>& word_index_map) {
+  int vocab_size = word_index_map.size();
+  memory_alloc_.resize(((int64)(num_topics)) * ((int64) vocab_size + 1), 0);
+  // topic_distribution and global_distribution are just accessor pointers
+  // and are not responsible for allocating/deleting memory.
+  topic_distributions_.resize(vocab_size);
+  global_distribution_.Reset(
+      &memory_alloc_[0] + (int64)vocab_size * num_topics,
+      num_topics);
+  for (int i = 0; i < vocab_size; ++i) {
+    topic_distributions_[i] =
+        TopicCountDistribution(&memory_alloc_[0] + num_topics * i,
+                               num_topics);
+  }
+  word_index_map_ = word_index_map;
 }
 
 const TopicCountDistribution& LDAModel::GetWordTopicDistribution(
-    const string& word) const {
-  map<string, TopicCountDistribution>::const_iterator target_distribution =
-      topic_distributions_.find(word);
-  if (target_distribution == topic_distributions_.end()) {
-    return zero_distribution_;
-  }
-  return target_distribution->second;
+    int word) const {
+  return topic_distributions_[word];
 }
 
 const TopicCountDistribution&
@@ -69,71 +76,33 @@ LDAModel::GetGlobalTopicDistribution() const {
   return global_distribution_;
 }
 
-void LDAModel::IncrementTopic(const string& word,
-                                   int topic,
-                                   int64 count) {
+void LDAModel::IncrementTopic(int word,
+                              int topic,
+                              int64 count) {
   CHECK_GT(num_topics(), topic);
-
-  // Search for the target distribution and create it if it doesn't exist.
-  map<string, TopicCountDistribution>::iterator target_distribution =
-      topic_distributions_.find(word);
-  if (target_distribution == topic_distributions_.end()) {
-    topic_distributions_[word].resize(num_topics());
-  }
+  CHECK_GT(num_words(), word);
 
   topic_distributions_[word][topic] += count;
   global_distribution_[topic] += count;
   CHECK_LE(0, topic_distributions_[word][topic]);
 }
 
-void LDAModel::ReassignTopic(const string& word,
-                                  int old_topic,
-                                  int new_topic,
-                                  int64 count) {
+void LDAModel::ReassignTopic(int word,
+                             int old_topic,
+                             int new_topic,
+                             int64 count) {
   IncrementTopic(word, old_topic, -count);
   IncrementTopic(word, new_topic, count);
 }
 
-bool LDAModel::IsValid() const {
-  // We LOG(ERROR) instead of CHECK here, where possible, because we want to
-  // make sure that we catch every error we can.
-  bool success = true;
-
-  // We're going to accumulate all the non-global distributions into this one,
-  // and at the end check to make sure that it's the same as the global
-  // distribution.
-  TopicCountDistribution check_distribution(num_topics());
-
-  for (Iterator iterator(this); !iterator.Done(); iterator.Next()) {
-    CHECK_EQ(num_topics(), iterator.Distribution().size());
-    for (int i = 0; i < num_topics(); ++i) {
-      check_distribution[i] += iterator.Distribution()[i];
-
-      if (iterator.Distribution()[i] < 0) {
-        success = false;
-        LOG(ERROR) << "Word " << iterator.Word() << " in topic " << i
-                   << " has negative count " << iterator.Distribution()[i]
-                   << " in a non-diff model.";
-      }
-    }
-  }
-  // Make sure that the global distribution and the newly-calculated sum are
-  // equal.
-  for (int i = 0; i < num_topics(); ++i) {
-    if (check_distribution[i] != GetGlobalTopicDistribution()[i]) {
-      success = false;
-      LOG(ERROR) << "For topic " << i << ":  sum of word counts is "
-                 << check_distribution[i] << ", but global count is "
-                 << GetGlobalTopicDistribution()[i] << ".";
-    }
-  }
-
-  return success;
-}
-
 void LDAModel::AppendAsString(std::ostream& out) const {
+  vector<string> index_word_map(word_index_map_.size());
+  for (map<string, int>::const_iterator iter = word_index_map_.begin();
+       iter != word_index_map_.end(); ++iter) {
+    index_word_map[iter->second] = iter->first;
+  }
   for (LDAModel::Iterator iter(this); !iter.Done(); iter.Next()) {
-    out << iter.Word() << "\t";
+    out << index_word_map[iter.Word()] << "\t";
     for (int topic = 0; topic < num_topics(); ++topic) {
       out << iter.Distribution()[topic]
           << ((topic < num_topics() - 1) ? " " : "\n");
@@ -141,7 +110,9 @@ void LDAModel::AppendAsString(std::ostream& out) const {
   }
 }
 
-void LDAModel::Load(std::istream& in) {
+LDAModel::LDAModel(std::istream& in, map<string, int>* word_index_map) {
+  word_index_map_.clear();
+  memory_alloc_.clear();
   string line;
   while (getline(in, line)) {  // Each line is a training document.
     if (line.size() > 0 &&      // Skip empty lines.
@@ -152,22 +123,32 @@ void LDAModel::Load(std::istream& in) {
       string word;
       double count_float;
       CHECK(ss >> word);
-      TopicCountDistribution word_distribution;
       while (ss >> count_float) {
-        word_distribution.push_back((int64)count_float);
+        memory_alloc_.push_back((int64)count_float);
       }
-      int distribution_size = word_distribution.size();
-      if (num_topics() == 0) {
-        global_distribution_.resize(distribution_size, 0);
-        zero_distribution_.resize(distribution_size, 0);
-      } else {
-        CHECK_EQ(num_topics(), distribution_size);
-      }
-      topic_distributions_[word] = word_distribution;
-      for (int i = 0; i < distribution_size; ++i) {
-        global_distribution_[i] += word_distribution[i];
-      }
+      int size = word_index_map_.size();
+      word_index_map_[word] = size;
     }
   }
+  int vocab_size = word_index_map_.size();
+  int num_topics = memory_alloc_.size() / vocab_size;
+  memory_alloc_.resize(((int64)(num_topics)) * ((int64) vocab_size + 1), 0);
+  // topic_distribution and global_distribution are just accessor pointers
+  // and are not responsible for allocating/deleting memory.
+  topic_distributions_.resize(vocab_size);
+  global_distribution_.Reset(
+      &memory_alloc_[0] + (int64)vocab_size * num_topics,
+      num_topics);
+  for (int i = 0; i < vocab_size; ++i) {
+    topic_distributions_[i] =
+        TopicCountDistribution(&memory_alloc_[0] + num_topics * i,
+                               num_topics);
+  }
+  for (int i = 0; i < vocab_size; ++i) {
+    for (int j = 0; j < num_topics; ++j) {
+      global_distribution_[j] += topic_distributions_[i][j];
+    }
+  }
+  *word_index_map = word_index_map_;
 }
 }  // namespace learning_lda

@@ -14,7 +14,7 @@
 
 #include "common.h"
 
-char* kSegmentFaultCauser = "Used to cause artificial segmentation fault";
+char kSegmentFaultCauser[] = "Used to cause artificial segmentation fault";
 
 namespace learning_lda {
 
@@ -24,7 +24,7 @@ bool IsValidProbDistribution(const TopicProbDistribution& dist) {
   for (int k = 0; k < dist.size(); ++k) {
     sum_distribution += dist[k];
   }
-  return (sum_distribution - 1)*(sum_distribution - 1)
+  return (sum_distribution - 1) * (sum_distribution - 1)
       <= kUnificationError;
 }
 

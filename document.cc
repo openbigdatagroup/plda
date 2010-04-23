@@ -64,7 +64,7 @@ void LDADocument::WordOccurrenceIterator::SetTopic(int new_topic) {
   *(parent_->topic_assignments_->mutable_wordtopics(word_topic_index_)) = new_topic;
 }
 
-const string& LDADocument::WordOccurrenceIterator::Word() {
+int LDADocument::WordOccurrenceIterator::Word() {
   CHECK(!Done());
   return parent_->topic_assignments_->word(word_index_);
 }
@@ -88,8 +88,26 @@ void LDADocument::CountTopicDistribution() {
   }
 }
 
+string LDADocument::DebugString() {
+  string s;
+  for (int i = 0; i < topic_assignments_->wordtopics_.size(); ++i) {
+    char buf[100];
+    snprintf(buf, sizeof(buf), "%d", topic_assignments_->wordtopics_[i]);
+    s.append(buf);
+    s.append(" ");
+  }
+  s.append("#");
+  for (int i = 0; i < topic_distribution_.size(); ++i) {
+    char buf[100];
+    snprintf(buf, sizeof(buf), "%lld", topic_distribution_[i]);
+    s.append(buf);
+    s.append(" ");
+  }
+  return s;
+}
+
 LDADocument::LDADocument(const DocumentWordTopicsPB& topics,
-                             int num_topics) {
+                         int num_topics) {
   topic_assignments_ = new DocumentWordTopicsPB;
   topic_assignments_->CopyFrom(topics);
 
@@ -102,4 +120,9 @@ LDADocument::~LDADocument() {
   topic_assignments_ = NULL;
 }
 
+void LDADocument::ResetWordIndex(const map<string, int>& word_index_map) {
+  for (int i = 0; i < topic_assignments_->words_.size(); ++i) {
+    (*topic_assignments_).words_[i] = word_index_map.find((*topic_assignments_).words_s_[i])->second;
+  }
+}
 }  // namespace learning_lda

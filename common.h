@@ -30,7 +30,7 @@
 // the segmentation fault makes the debugger keeps track of the stack,
 // which provides the context of the fail.
 //
-extern char* kSegmentFaultCauser;
+extern char kSegmentFaultCauser[];
 
 #define CHECK(a) if (!(a)) {                                            \
     std::cerr << "CHECK failed "                                        \
@@ -129,7 +129,26 @@ using std::vector;
 using std::string;
 
 // A dense vector of counts used for storing topic counts.
-typedef vector<int64> TopicCountDistribution;
+// No memory allocation here, just keep pointers.
+class TopicCountDistribution {
+ public:
+  TopicCountDistribution()
+      : distribution_(NULL), size_(0) {
+  }
+  TopicCountDistribution(int64* distribution, int size)
+      : distribution_(distribution), size_(size) {
+  }
+  void Reset(int64* distribution, int size) {
+    distribution_ = distribution;
+    size_ = size;
+  }
+  int size() const { return size_; }
+  inline int64& operator[](int index) const { return distribution_[index]; }
+  void clear() { memset(distribution_, 0, sizeof(*distribution_) * size_); }
+ private:
+  int64* distribution_;
+  int size_;
+};
 
 // A dense vector of probability values representing a discrete
 // probability distribution, e.g., the topic distribution of a word.
@@ -145,7 +164,8 @@ bool IsValidProbDistribution(const TopicProbDistribution& dist);
 // topic assignments are ``hidden'' data.
 struct DocumentWordTopicsPB {
   // The document unique words list.
-  vector<string> words_;
+  vector<string> words_s_;
+  vector<int> words_;
   // Each word occurrance's topic.
   //  wordtopics_.size() = num_words_in_document.
   //  words_.size() = num_unique_words_in_document.
@@ -165,11 +185,13 @@ struct DocumentWordTopicsPB {
   int word_last_topic_index(int word_index) const {
     return wordtopics_start_index_[word_index + 1] - 1;
   }
-  const string& word(int word_index) const { return words_[word_index]; }
+  int word(int word_index) const { return words_[word_index]; }
   int32 wordtopics(int index) const { return wordtopics_[index]; }
   int32* mutable_wordtopics(int index) { return &wordtopics_[index]; }
 
-  void add_wordtopics(const string& word, const vector<int32>& topics) {
+  void add_wordtopics(const string& word_s,
+                      int word, const vector<int32>& topics) {
+    words_s_.push_back(word_s);
     words_.push_back(word);
     wordtopics_start_index_.pop_back();
     wordtopics_start_index_.push_back(wordtopics_.size());
@@ -199,10 +221,7 @@ inline int RandInt(int bound) {
 int GetAccumulativeSample(const vector<double>& distribution);
 
 
-// Steaming output facilities for GSL matrix, GSL vector and STL
-// vector.
-//std::ostream& operator << (std::ostream& out, gsl_matrix* m);
-//std::ostream& operator << (std::ostream& out, gsl_vector* v);
+// Steaming output facilities.
 std::ostream& operator << (std::ostream& out, vector<double>& v);
 
 }  // namespace learning_lda

@@ -64,13 +64,11 @@ class LDASampler {
   // indicated one, compute a non-normalized probability distribution over
   // topics for the indicated word occurrence.
   void GenerateTopicDistributionForWord(const LDADocument& document,
-      const string& word, int current_word_topic, bool train_model,
+      int word, int current_word_topic, bool train_model,
       vector<double>* distribution) const;
 
   // Computes the log likelihood of a document.
   double LogLikelihood(LDADocument* document) const;
-
-  bool IsValid() const;
 
  private:
   const double alpha_;
