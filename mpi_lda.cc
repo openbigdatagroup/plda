@@ -26,6 +26,7 @@
 
 #include "mpi.h"
 
+#include <algorithm>
 #include <fstream>
 #include <set>
 #include <vector>
@@ -46,6 +47,7 @@ using std::set;
 using std::vector;
 using std::list;
 using std::map;
+using std::sort;
 using std::string;
 using learning_lda::LDADocument;
 
