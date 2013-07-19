@@ -207,7 +207,7 @@ struct DocumentWordTopicsPB {
 // Generate a random float value in the range of [0,1) from the
 // uniform distribution.
 inline double RandDouble() {
-  return rand() / static_cast<double>(RAND_MAX);
+  return rand() / (static_cast<double>(RAND_MAX) + 0.000001);
 }
 
 // Generate a random integer value in the range of [0,bound) from the
