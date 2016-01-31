@@ -1,0 +1,10 @@
+word0 8 word1 6 word2 8 word6 28 word7 31 word8 19 
+word0 24 word1 30 word2 21 word6 9 word7 10 word8 6 
+word0 3 word1 5 word2 5 word6 22 word7 28 word8 37 
+word0 8 word1 6 word2 6 word6 32 word7 20 word8 28 
+word0 25 word1 29 word2 30 word6 6 word7 5 word8 5 
+word0 14 word1 16 word2 15 word6 14 word7 22 word8 19 
+word0 10 word1 15 word2 14 word6 16 word7 26 word8 19 
+word0 25 word1 24 word2 23 word6 9 word7 9 word8 10 
+word0 21 word1 29 word2 29 word6 4 word7 9 word8 8 
+word0 15 word1 10 word2 10 word6 20 word7 22 word8 23 
