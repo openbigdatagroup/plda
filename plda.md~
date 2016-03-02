@@ -26,7 +26,7 @@
   * git clone https://github.com/obdg/plda.git`
   * `cd plda`
   * `make all`
-  * You will see a binary file `lda`, `mpi_lda` and `infer` generated in the folder
+  * You will see a binary file `lda` and `infer` generated in the folder
 
 # Data Format #
   * Data is stored using a sparse representation, with one document per line. Each line is the words of this document together with the word count. The format of the data file is: 
