@@ -2,7 +2,7 @@
 <html lang="en-us">
   <head>
     <meta charset="UTF-8">
-    <title>Plda by obdg</title>
+    <title>Plda by wykvictor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
@@ -13,53 +13,234 @@
     <section class="page-header">
       <h1 class="project-name">Plda</h1>
       <h2 class="project-tagline">Parallel C++ implementation of Latent Dirichlet Allocation </h2>
-      <a href="https://github.com/obdg/plda" class="btn">View on GitHub</a>
-      <a href="https://github.com/obdg/plda/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/obdg/plda/tarball/master" class="btn">Download .tar.gz</a>
+      <a href="https://github.com/wykvictor/plda" class="btn">View on GitHub</a>
+      <a href="https://github.com/wykvictor/plda/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/wykvictor/plda/tarball/master" class="btn">Download .tar.gz</a>
     </section>
 
     <section class="main-content">
-      <p>plda is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) (1,2).  We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA (3).  The carefully designed architecture is expected to support extensions of this algorithm.</p>
+      <h1>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
 
-<p>We will release an enhanced parallel implementation of LDA, named as PLDA+ (2), which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.</p>
+<p>Plda is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) (1,2). We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA (3). The carefully designed architecture is expected to support extensions of this algorithm.</p>
+
+<p>We will release an enhanced parallel implementation of LDA, named as PLDA+ (1), which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.</p>
+
+<h1>
+<a id="requirement" class="anchor" href="#requirement" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirement</h1>
+
+<ul>
+<li>Parallel lda must be run in linux environment with g++ compiler and mpich2-1.0.8 installed.</li>
+</ul>
+
+<h1>
+<a id="quick-start" class="anchor" href="#quick-start" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Quick Start</h1>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<ul>
+<li>Install mpich2
+
+<ul>
+<li>Download mpich2-1.0.8.tar.gz
+
+<ul>
+<li><code>wget http://www.mpich.org/static/downloads/1.0.8/mpich2-1.0.8.tar.gz</code></li>
+</ul>
+</li>
+<li>Extract it to a path
+
+<ul>
+<li><code>./configure</code></li>
+<li><code>make &amp;&amp; make install</code></li>
+</ul>
+</li>
+<li>After installing, you will find some binaries and scripts in $PATH. Test by running <code>mpd</code> to see if it exists</li>
+</ul>
+</li>
+<li>Configure mpich2
+
+<ul>
+<li>Create password file <code>~/.mpd.conf</code> with access mode 600 (rw-------) in home directory. The file should contain a single line <code>MPD_SECRETWORD=PASSWORD</code>. Because you may have many  machines, you must do this on each machine.
+
+<ul>
+<li><code>touch ~/.mpd.conf</code></li>
+<li><code>chmod 600 ~/.mpd.conf</code></li>
+<li><code>cat "MPD_SECRETWORD=anypassword" &gt; ~/.mpd.conf</code></li>
+</ul>
+</li>
+<li>Pick one machine as the master and startup mpd(mpi daemon)
+
+<ul>
+<li><code>mpd --daemon --listenport=55555</code></li>
+</ul>
+</li>
+<li>Other machines act as slave and must connect to the master
+
+<ul>
+<li><code>mpd --daemon -h serverHostName -p 55555</code></li>
+</ul>
+</li>
+<li>Check whether the environment is setup successfully: on master, run <code>mpdtrace</code>, you will see all the slaves. If no machines show up, you must check your mpi setup and refer to mpich2 user manual.</li>
+</ul>
+</li>
+<li>Install plda
+
+<ul>
+<li>Download and build plda
+
+<ul>
+<li><code>git clone https://github.com/obdg/plda.git</code></li>
+<li><code>cd plda</code></li>
+<li><code>make all</code></li>
+</ul>
+</li>
+<li>You will see a binary file <code>lda</code>, <code>mpi_lda</code> and <code>infer</code> generated in the folder</li>
+<li>We use mpich2 builtin compiler mpicxx to compile, it is a wrap of g++.</li>
+</ul>
+</li>
+</ul>
+
+<h2>
+<a id="data-format" class="anchor" href="#data-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Data Format</h2>
+
+<ul>
+<li>
+<p>Data is stored using a sparse representation, with one document per line. Each line is the words of this document together with the word count. The format of the data file is:</p>
+
+<pre><code>&lt;word1&gt; &lt;word1_count&gt; &lt;word2&gt; &lt;word2_count&gt; &lt;word3&gt; &lt;word3_count&gt; ...
+.
+.
+.
+</code></pre>
+</li>
+<li>Each word is an arbitrary string, but it is not expected to contain space/newline or other special characters.</li>
+<li>
+<p>Example: Suppose there are two documents. The first one is <code>"a is a character"</code>; The second one is <code>"b is a character after a"</code>. Then the datafile would look like:</p>
+
+<pre><code>a 2 is 1 character 1
+a 2 is 1 b 1 character 1 after 1
+</code></pre>
+</li>
+</ul>
+
+<h2>
+<a id="usage-and-examples" class="anchor" href="#usage-and-examples" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage and Examples</h2>
+
+<ul>
+<li>
+<p>Train</p>
+
+<ul>
+<li><code>./lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --burn_in_iterations 100 --total_iterations 150</code></li>
+<li>After training completes, you will see a file <code>/tmp/lda_model.txt</code> generated. This file stores the training result. Each line is the topic distribution of a word. The first element is the word string, then its occurrence count within each topic. You could use view_model.py to convert the model to a readable text.</li>
+</ul>
+</li>
+<li>
+<p>Train parallelly</p>
+
+<ul>
+<li>Prepare data the same as the single processor version.</li>
+<li><code>mpiexec -n 5 ./mpi_lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --total_iterations 150</code></li>
+<li>The input and output are the same with single processor version.</li>
+</ul>
+</li>
+<li>
+<p>Training flags</p>
+
+<ul>
+<li>
+<code>alpha</code>: Suggested to be 50/number_of_topics</li>
+<li>
+<code>beta</code>: Suggested to be 0.01</li>
+<li>
+<code>num_topics</code>: The total number of topics.</li>
+<li>
+<code>total_iterations</code>: The total number of GibbsSampling iterations.</li>
+<li>
+<code>burn_in_iterations</code>: After --burn_in_iterations iteration, the model will be almost converged. Then we will average models of the last (total_iterations-burn_in_iterations) iterations as the final model. This only takes effect for single processor version. For example: you set total_iterations to 200, you found that after 170 iterations, the model is almost converged. Then you could set burn_in_iterations to 170 so that the final model will be the average of the last 30 iterations.</li>
+<li>
+<code>model_file</code>: The output file of the trained model.</li>
+<li>
+<code>training_data_file</code>: The training data.</li>
+<li>Inferring flags:</li>
+<li>
+<code>alpha</code> and <code>beta</code> should be the same with training.</li>
+<li>
+<code>total_iterations</code>: The total number of GibbsSampling iterations for an unseen document to determine its word topics. This number needs not be as much as training, usually tens of iterations is enough.</li>
+<li>
+<code>burn_in_iterations</code>: For an unseen document, we will average the document_topic_distribution of the last (total_iterations-burn_in_iterations) iterations as the final document_topic_distribution.</li>
+</ul>
+</li>
+<li>
+<p>Infer unseen documents:</p>
+
+<ul>
+<li><code>./infer --alpha 0.1 --beta 0.01 --inference_data_file testdata/test_data.txt --inference_result_file /tmp/inference_result.txt --model_file /tmp/lda_model.txt --total_iterations 15 --burn_in_iterations 10</code></li>
+</ul>
+</li>
+</ul>
+
+<h1>
+<a id="citation" class="anchor" href="#citation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Citation</h1>
 
 <p>If you wish to publish any work based on plda, please cite our paper as:</p>
 
-<p>Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun, PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011. Software available at <a href="https://github.com/obdg/plda">https://github.com/obdg/plda</a></p>
+<pre><code>Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun, PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011. Software available at http://code.google.com/p/plda.
+</code></pre>
+
+<p>The bibtex format is:</p>
+
+<pre><code>@article{
+  plda,
+  author = {Zhiyuan Liu and Yuzhou Zhang and Edward Y. Chang and Maosong Sun},
+  title = {PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing},
+  year = {2011},
+  journal = {ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning},
+  note = {Software available at \url{http://code.google.com/p/plda}}
+}
+</code></pre>
 
 <p>If you have any questions, please visit <a href="http://groups.google.com/group/plda">http://groups.google.com/group/plda</a></p>
 
-<p>The bibtex format is</p>
-
-<pre><code>@article{^M
-  plda,^M
-  author = {Zhiyuan Liu and Yuzhou Zhang and Edward Y. Chang and Maosong Sun},^M
-  title = {PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing},^M
-  year = {2011},^M
-  journal = {ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning},^M
-  note = {Software available at \url{https://github.com/obdg/plda}}^M
-}^M
-</code></pre>
-
-<p>References:</p>
+<h1>
+<a id="references" class="anchor" href="#references" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>References</h1>
 
 <p>(1) PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011.</p>
 
 <blockquote>
-<p><a href="files/plda_plus_acmtist2011.pdf">http://obdg.github.io/plda/files/plda_plus_acmtist2011.pdf</a>
-(2) PLDA: Parallel Latent Dirichlet Allocation for Large-scale Applications. Yi Wang, Hongjie Bai, Matt Stanton, Wen-Yen Chen, and Edward Y. Chang. AAIM 2009.</p>
+<p><a href="http://plda.googlecode.com/files/plda_plus_acmtist2011.pdf">http://plda.googlecode.com/files/plda_plus_acmtist2011.pdf</a></p>
+</blockquote>
+
+<p>(2) PLDA: Parallel Latent Dirichlet Allocation for Large-scale Applications. Yi Wang, Hongjie Bai, Matt Stanton, Wen-Yen Chen, and Edward Y. Chang. AAIM 2009.</p>
 
 <blockquote>
-<p><a href="files/aaim.pdf">http://obdg.github.io/plda/files/aaim.pdf</a>
-(3) Latent Dirichlet Allocation, Blei et al., JMLR (3), 2003.
-<a href="http://www.cs.princeton.edu/%7Eblei/papers/BleiNgJordan2003.pdf">http://www.cs.princeton.edu/~blei/papers/BleiNgJordan2003.pdf</a>
-(4) Finding scientific topics, Griffiths and Steyvers, PNAS (101), 2004.
-<a href="http://www.pnas.org/content/101/suppl.1/5228.full.pdf">http://www.pnas.org/content/101/suppl.1/5228.full.pdf</a>
-(5) Fast collapsed gibbs sampling for latent dirichlet allocation, Porteous et al., KDD 2008.
-<a href="http://portal.acm.org/citation.cfm?id=1401960">http://portal.acm.org/citation.cfm?id=1401960</a>
-(6) Distributed Inference for Latent Dirichlet Allocation, Newman et al., NIPS 2007.
-<a href="http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf">http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf</a></p>
+<p><a href="http://plda.googlecode.com/files/aaim.pdf">http://plda.googlecode.com/files/aaim.pdf</a></p>
 </blockquote>
+
+<p>(3) Latent Dirichlet Allocation, Blei et al., JMLR (3), 2003.</p>
+
+<blockquote>
+<p><a href="http://www.cs.princeton.edu/%7Eblei/papers/BleiNgJordan2003.pdf">http://www.cs.princeton.edu/~blei/papers/BleiNgJordan2003.pdf</a></p>
+</blockquote>
+
+<p>(4) Finding scientific topics, Griffiths and Steyvers, PNAS (101), 2004.</p>
+
+<blockquote>
+<p><a href="http://www.pnas.org/content/101/suppl.1/5228.full.pdf">http://www.pnas.org/content/101/suppl.1/5228.full.pdf</a></p>
+</blockquote>
+
+<p>(5) Fast collapsed gibbs sampling for latent dirichlet allocation, Porteous et al., KDD 2008.</p>
+
+<blockquote>
+<p><a href="http://portal.acm.org/citation.cfm?id=1401960">http://portal.acm.org/citation.cfm?id=1401960</a></p>
+</blockquote>
+
+<p>(6) Distributed Inference for Latent Dirichlet Allocation, Newman et al., NIPS 2007.</p>
+
+<blockquote>
+<p><a href="http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf">http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf</a></p>
 </blockquote>
 
 <p>Papers using plda code:</p>
@@ -71,7 +252,7 @@
 </blockquote>
 
       <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/obdg/plda">Plda</a> is maintained by <a href="https://github.com/obdg">obdg</a>.</span>
+        <span class="site-footer-owner"><a href="https://github.com/wykvictor/plda">Plda</a> is maintained by <a href="https://github.com/wykvictor">wykvictor</a>.</span>
 
         <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
       </footer>
