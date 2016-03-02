@@ -11,27 +11,27 @@ We will release an enhanced parallel implementation of LDA, named as PLDA+ (1), 
 
 ## Installation #
   * Install mpich2
-      * Download mpich2-1.0.8.tar.gz
-        * `wget http://www.mpich.org/static/downloads/1.0.8/mpich2-1.0.8.tar.gz`
-      * Extract it to a path
-        * `./configure`
-        * `make && make install`
+      * Download mpich2-1.0.8.tar.gz  
+      `wget http://www.mpich.org/static/downloads/1.0.8/mpich2-1.0.8.tar.gz`
+      * Extract it to a path  
+      `./configure`  
+      `make && make install`
       * After installing, you will find some binaries and scripts in $PATH. Test by running `mpd` to see if it exists
   * Configure mpich2
-    * Create password file `~/.mpd.conf` with access mode 600 (rw-------) in home directory. The file should contain a single line `MPD_SECRETWORD=PASSWORD`. Because you may have many  machines, you must do this on each machine.
-      * `touch ~/.mpd.conf`
-      * `chmod 600 ~/.mpd.conf`
-      * `cat "MPD_SECRETWORD=anypassword" > ~/.mpd.conf`
-    * Pick one machine as the master and startup mpd(mpi daemon)
-      * `mpd --daemon --listenport=55555`
-    * Other machines act as slave and must connect to the master
-      * `mpd --daemon -h serverHostName -p 55555`
+    * Create password file `~/.mpd.conf` with access mode 600 (rw-------) in home directory. The file should contain a single line `MPD_SECRETWORD=PASSWORD`. Because you may have many  machines, you must do this on each machine.  
+      `touch ~/.mpd.conf`  
+      `chmod 600 ~/.mpd.conf`  
+      `cat "MPD_SECRETWORD=anypassword" > ~/.mpd.conf`
+    * Pick one machine as the master and startup mpd(mpi daemon)  
+      `mpd --daemon --listenport=55555`
+    * Other machines act as slave and must connect to the master  
+      `mpd --daemon -h serverHostName -p 55555`
     * Check whether the environment is setup successfully: on master, run `mpdtrace`, you will see all the slaves. If no machines show up, you must check your mpi setup and refer to mpich2 user manual.
   * Install plda
-    * Download and build plda
-     * `git clone https://github.com/obdg/plda.git`
-     * `cd plda`
-     * `make all`
+    * Download and build plda  
+     `git clone https://github.com/obdg/plda.git`  
+     `cd plda`  
+     `make all`
     * You will see a binary file `lda`, `mpi_lda` and `infer` generated in the folder
     * We use mpich2 builtin compiler mpicxx to compile, it is a wrap of g++.
 
