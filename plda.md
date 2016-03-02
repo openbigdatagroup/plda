@@ -2,7 +2,7 @@
 
 # Requirement # 
 
-Parallel lda must be run in linux environment with g++ compiler and mpich2-1.0.8 installed.
+  * Parallel lda must be run in linux environment with g++ compiler and mpich2-1.0.8 installed.
 
 # Quick Start #
 
