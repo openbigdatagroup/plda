@@ -9,6 +9,8 @@ RUN mkdir /var/run/sshd
 
 RUN echo "StrictHostKeyChecking no" >> /etc/ssh/ssh_config
 
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
 RUN /usr/bin/ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 
 RUN cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
