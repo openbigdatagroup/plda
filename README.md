@@ -187,6 +187,30 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
     <td align="center">children</td>
   </tr>
   <tr>
+    <td align="center">lawer</td>
+    <td align="center">campaign</td>
+    <td align="center">restaurant</td>
+    <td align="center">attack</td>
+    <td align="center">cell</td>
+    <td align="center">site</td>
+    <td align="center">stock</td>
+    <td align="center">player</td>
+    <td align="center">music</td>
+    <td align="center">family</td>
+  </tr>
+  <tr>
+    <td align="center">police</td>
+    <td align="center">vote</td>
+    <td align="center">oil</td>
+    <td align="center">war</td>
+    <td align="center">disease</td>
+    <td align="center">www</td>
+    <td align="center">business</td>
+    <td align="center">coach</td>
+    <td align="center">actor</td>
+    <td align="center">home</td>
+  </tr>
+  <tr>
     <th align="center">...</th>
     <th align="center">...</th>
     <th align="center">...</th>
