@@ -2,3 +2,5 @@ obj
 lda
 infer
 mpi_lda
+hosts
+*model.txt
