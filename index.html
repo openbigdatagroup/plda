@@ -42,7 +42,7 @@
 ./run_docker.sh
 </code></pre>
 
-<p>It will first build the plad image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.</p>
+<p>It will first build the plda image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.</p>
 </li>
 <li><p>Visualization<br>
   We recommend that you use <a href="https://www.weave.works/products/weave-scope/">Weave Scope</a> to monitor Docker containers.<br>
@@ -64,14 +64,15 @@
 <a id="install-plda" class="anchor" href="#install-plda" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install plda</h3>
 
 <ul>
-<li>Download and build plda<br>
-<code>
-git clone https://github.com/obdg/plda.git 
-cd plda
+<li>
+<p>Download and build plda </p>
+
+<pre><code>git clone https://github.com/obdg/plda.git  
+cd plda  
 make all
-</code>
+</code></pre>
 </li>
-<li>You will see a binary file <code>lda</code>, <code>mpi_lda</code> and <code>infer</code> generated in the folder</li>
+<li><p>You will see a binary file <code>lda</code>, <code>mpi_lda</code> and <code>infer</code> generated in the folder</p></li>
 <li>We use mpich builtin compiler mpicxx to compile, it is a wrap of g++.</li>
 </ul>
 
@@ -109,6 +110,7 @@ a 2 is 1 b 1 character 1 after 1
 <p>Train  </p>
 
 <ul>
+<li>Prepare data as described in section "Data Format".</li>
 <li><code>./lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --burn_in_iterations 100 --total_iterations 150</code></li>
 </ul>
 </li>
@@ -193,49 +195,39 @@ a 2 is 1 b 1 character 1 after 1
 <li><p>Change the data to the proper format as described above.<br>
   <code>./format.py nytimes</code><br>
  Because the data set is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". </p></li>
+<li><p>Train parallelly<br>
+ We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory.<br>
+ <code>mpiexec -n 8 ./mpi_lda --num_topics 10 --alpha 0.1 --beta 0.01 --training_data_file testdata/nytimes.txt --model_file /tmp/ny_model_8.txt --burn_in_iterations 100 --total_iterations 150</code><br>
+ <strong>Note:</strong> The above executing command can be ran from any of the 8 hosts, but the date set(nytimes.txt) should be copied to the identical location of all the hosts.</p></li>
 <li>
-<p>Train parallelly
- We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory. </p>
-
-<p><code>mpiexec -n 8 ./mpi_lda --num_topics 10 --alpha 0.1 --beta 0.01 --training_data_file testdata/nytimes.txt --model_file /tmp/ny_model_8.txt --burn_in_iterations 100 --total_iterations 150</code></p>
-
-<p><strong>Note:</strong> The above executing command can be ran from any of the 8 hosts, but the date set(nytimes.txt) should be copied to the identical location of all the hosts.</p>
-</li>
-<li>
-<p>Training performance
- Also, we ran the same example with different number of machines from 1~8 on the same cluster, and here is the results: </p>
+<p>Training performance<br>
+ Also, we ran the same example with different number of machines from 1~8 on the same cluster, and here is the results:   </p>
 
 <ul>
 <li>
-<p>Memory:</p>
+<p>Memory:  </p>
 
-<p><img src="testdata/plda-memory.png" alt="plda-memory"></p>
+<p><img src="testdata/plda-memory.png" alt="plda-memory">  </p>
 
-<p><em>1. The memory cost is almost linearly reduced as the number of the machines increase.</em></p>
-
-<p><em>2. During running time, all the documents are distributely stored. If your corpus is huge, you could add more machines.</em></p>
-
-<p><em>3. The memory cost is NUM_VOCABULARY * NUM_TOPICS * sizeof(int64) bytes, and you have to make sure the sum of all machines' memory must be greater than this. If not, you have to reduce your vocabulary size or reduce num_topics.</em></p>
+<p><em>1. The memory cost is almost linearly reduced as the number of the machines increase.</em><br>
+<em>2. During running time, all the documents are distributely stored. If your corpus is huge, you could add more machines.</em><br>
+<em>3. The memory cost is NUM_VOCABULARY * NUM_TOPICS * sizeof(int64) bytes, and you have to make sure the sum of all machines' memory must be greater than this. If not, you have to reduce your vocabulary size or reduce num_topics.</em></p>
 </li>
 <li>
-<p>Speedup:</p>
+<p>Speedup:  </p>
 
-<p><img src="testdata/plda-speedup.png" alt="plda-speedup"></p>
+<p><img src="testdata/plda-speedup.png" alt="plda-speedup">  </p>
 
-<p><em>1. For each iteration, all computers do GibbsSampling parallelly. At the end of iterations, they reduces updated model. Generally, if the corpus is large and the model is small, the speedup is almost linear. If the model is large and the corpus is small, the speedup may be worse than linear.</em></p>
-
-<p><em>2. The performance may also be infected by the conditions of network/computing resource of the mpi-cluster.</em></p>
+<p><em>1. The curv Perfect is the base-line of linear speedup to compare.</em><br>
+<em>2. For each iteration, all computers do GibbsSampling parallelly. At the end of iterations, they reduces updated model. Generally, if the corpus is large and the model is small, the speedup is almost linear. If the model is large and the corpus is small, the speedup may be worse than linear.</em><br>
+<em>3. The performance may also be infected by the conditions of network/computing resource of the mpi-cluster.</em></p>
 </li>
 </ul>
 </li>
-<li>
-<p>View Model
-We can view the trained mobel using view_model.py to convert the model to a readable text.</p>
-
-<p><code>python view_model.py /tmp/ny_model_8.txt</code></p>
-
-<p>And we selete some words from it in each topic as shown in below table:</p>
-</li>
+<li><p>View Model<br>
+We can view the trained mobel using view_model.py to convert the model to a readable text.<br>
+<code>./view_model.py /tmp/ny_model_8.txt</code><br>
+And we selete some words from it in each topic as shown in below table:</p></li>
 </ul>
 
 <table>
