@@ -14,7 +14,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
     ./run_docker.sh
     ```
 
-    It will first build the plad image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.
+    It will first build the plda image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.
 
   * Visualization  
       We recommend that you use [Weave Scope](https://www.weave.works/products/weave-scope/) to monitor Docker containers.  
@@ -25,12 +25,14 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 * Download the latest mpich [here](https://www.mpich.org/downloads/), and install.  
 
 ### Install plda
-* Download and build plda  
+* Download and build plda 
+
     ```
-    git clone https://github.com/obdg/plda.git 
-    cd plda
+    git clone https://github.com/obdg/plda.git  
+    cd plda  
     make all
     ```
+
 * You will see a binary file `lda`, `mpi_lda` and `infer` generated in the folder
 * We use mpich builtin compiler mpicxx to compile, it is a wrap of g++.
 
@@ -54,6 +56,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 # Usage #
 ### Train ###
   * Train  
+      * Prepare data as described in section "Data Format".
       * `./lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --burn_in_iterations 100 --total_iterations 150`
 
 
@@ -102,39 +105,32 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
       `./format.py nytimes`  
      Because the data set is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". 
 
-  * Train parallelly
-     We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory. 
-
-     `mpiexec -n 8 ./mpi_lda --num_topics 10 --alpha 0.1 --beta 0.01 --training_data_file testdata/nytimes.txt --model_file /tmp/ny_model_8.txt --burn_in_iterations 100 --total_iterations 150`
-
+  * Train parallelly  
+     We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory.   
+     `mpiexec -n 8 ./mpi_lda --num_topics 10 --alpha 0.1 --beta 0.01 --training_data_file testdata/nytimes.txt --model_file /tmp/ny_model_8.txt --burn_in_iterations 100 --total_iterations 150`  
      **Note:** The above executing command can be ran from any of the 8 hosts, but the date set(nytimes.txt) should be copied to the identical location of all the hosts.
 
-  * Training performance
-     Also, we ran the same example with different number of machines from 1~8 on the same cluster, and here is the results: 
+  * Training performance  
+     Also, we ran the same example with different number of machines from 1~8 on the same cluster, and here is the results:   
+     * Memory:  
 
-     * Memory:
+       ![plda-memory](testdata/plda-memory.png)  
 
-       ![plda-memory](testdata/plda-memory.png)
-
-       *1. The memory cost is almost linearly reduced as the number of the machines increase.*
-
-       *2. During running time, all the documents are distributely stored. If your corpus is huge, you could add more machines.*
-
+       *1. The memory cost is almost linearly reduced as the number of the machines increase.*  
+       *2. During running time, all the documents are distributely stored. If your corpus is huge, you could add more machines.*  
        *3. The memory cost is NUM_VOCABULARY * NUM_TOPICS * sizeof(int64) bytes, and you have to make sure the sum of all machines' memory must be greater than this. If not, you have to reduce your vocabulary size or reduce num_topics.*
 
-     * Speedup:
+     * Speedup:  
 
-      ![plda-speedup](testdata/plda-speedup.png)
+      ![plda-speedup](testdata/plda-speedup.png)  
+      
+      *1. The curv Perfect is the base-line of linear speedup to compare.*  
+      *2. For each iteration, all computers do GibbsSampling parallelly. At the end of iterations, they reduces updated model. Generally, if the corpus is large and the model is small, the speedup is almost linear. If the model is large and the corpus is small, the speedup may be worse than linear.*  
+      *3. The performance may also be infected by the conditions of network/computing resource of the mpi-cluster.*
 
-      *1. For each iteration, all computers do GibbsSampling parallelly. At the end of iterations, they reduces updated model. Generally, if the corpus is large and the model is small, the speedup is almost linear. If the model is large and the corpus is small, the speedup may be worse than linear.*
-
-      *2. The performance may also be infected by the conditions of network/computing resource of the mpi-cluster.*
-
-  * View Model
-    We can view the trained mobel using view\_model.py to convert the model to a readable text.
-
-    `python view_model.py /tmp/ny_model_8.txt`
-    
+  * View Model  
+    We can view the trained mobel using view\_model.py to convert the model to a readable text.  
+    `./view_model.py /tmp/ny_model_8.txt`  
     And we selete some words from it in each topic as shown in below table:
 
 <table>

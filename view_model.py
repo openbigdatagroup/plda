@@ -1,4 +1,4 @@
-#!/usr/bin/python2.4
+#!/usr/bin/python
 # Print a readable text of the model
 # ./view_model.py model_file viewable_file
 
