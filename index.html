@@ -22,88 +22,61 @@
       <h1>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
 
-<p>Plda is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) (1,2). We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA (3). The carefully designed architecture is expected to support extensions of this algorithm.</p>
+<p>Plda is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) [1,2]. We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA [3]. The carefully designed architecture is expected to support extensions of this algorithm.</p>
 
-<p>We will release an enhanced parallel implementation of LDA, named as PLDA+ (1), which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.</p>
+<p>We will release an enhanced parallel implementation of LDA, named as PLDA+ [2], which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.</p>
 
 <h1>
 <a id="requirement" class="anchor" href="#requirement" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirement</h1>
 
-<ul>
-<li>Parallel lda must be run in linux environment with g++ compiler and mpich2-1.0.8 installed.</li>
-</ul>
+<p>Parallel lda must be run in linux environment with g++ compiler and <a href="https://www.mpich.org/">mpich</a> installed.</p>
 
 <h1>
 <a id="quick-start" class="anchor" href="#quick-start" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Quick Start</h1>
 
-<h2>
-<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
-
 <ul>
-<li>Install mpich2
+<li>
+<p>Use Docker to simulate parallel environment.  </p>
 
-<ul>
-<li>Download mpich2-1.0.8.tar.gz
+<pre><code>cd plda/docker
+./run_docker.sh
+</code></pre>
 
-<ul>
-<li><code>wget http://www.mpich.org/static/downloads/1.0.8/mpich2-1.0.8.tar.gz</code></li>
-</ul>
+<p>It will first build the plad image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.</p>
 </li>
-<li>Extract it to a path
+<li><p>Visualization<br>
+  We recommend that you use <a href="https://www.weave.works/products/weave-scope/">Weave Scope</a> to monitor Docker containers.<br>
+  Please refer to <a href="https://www.weave.works/install-weave-scope/">install weave scope</a>.</p></li>
+</ul>
+
+<h1>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h1>
+
+<h3>
+<a id="install-mpich" class="anchor" href="#install-mpich" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install mpich</h3>
 
 <ul>
-<li><code>./configure</code></li>
-<li><code>make &amp;&amp; make install</code></li>
-</ul>
+<li>Download the latest mpich <a href="https://www.mpich.org/downloads/">here</a>, and install.<br>
 </li>
-<li>After installing, you will find some binaries and scripts in $PATH. Test by running <code>mpd</code> to see if it exists</li>
 </ul>
-</li>
-<li>Configure mpich2
+
+<h3>
+<a id="install-plda" class="anchor" href="#install-plda" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install plda</h3>
 
 <ul>
-<li>Create password file <code>~/.mpd.conf</code> with access mode 600 (rw-------) in home directory. The file should contain a single line <code>MPD_SECRETWORD=PASSWORD</code>. Because you may have many  machines, you must do this on each machine.
-
-<ul>
-<li><code>touch ~/.mpd.conf</code></li>
-<li><code>chmod 600 ~/.mpd.conf</code></li>
-<li><code>cat "MPD_SECRETWORD=anypassword" &gt; ~/.mpd.conf</code></li>
-</ul>
-</li>
-<li>Pick one machine as the master and startup mpd(mpi daemon)
-
-<ul>
-<li><code>mpd --daemon --listenport=55555</code></li>
-</ul>
-</li>
-<li>Other machines act as slave and must connect to the master
-
-<ul>
-<li><code>mpd --daemon -h serverHostName -p 55555</code></li>
-</ul>
-</li>
-<li>Check whether the environment is setup successfully: on master, run <code>mpdtrace</code>, you will see all the slaves. If no machines show up, you must check your mpi setup and refer to mpich2 user manual.</li>
-</ul>
-</li>
-<li>Install plda
-
-<ul>
-<li>Download and build plda
-
-<ul>
-<li><code>git clone https://github.com/obdg/plda.git</code></li>
-<li><code>cd plda</code></li>
-<li><code>make all</code></li>
-</ul>
+<li>Download and build plda<br>
+<code>
+git clone https://github.com/obdg/plda.git 
+cd plda
+make all
+</code>
 </li>
 <li>You will see a binary file <code>lda</code>, <code>mpi_lda</code> and <code>infer</code> generated in the folder</li>
-<li>We use mpich2 builtin compiler mpicxx to compile, it is a wrap of g++.</li>
-</ul>
-</li>
+<li>We use mpich builtin compiler mpicxx to compile, it is a wrap of g++.</li>
 </ul>
 
-<h2>
-<a id="data-format" class="anchor" href="#data-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Data Format</h2>
+<h1>
+<a id="data-format" class="anchor" href="#data-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Data Format</h1>
 
 <ul>
 <li>
@@ -125,16 +98,18 @@ a 2 is 1 b 1 character 1 after 1
 </li>
 </ul>
 
-<h2>
-<a id="usage-and-examples" class="anchor" href="#usage-and-examples" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage and Examples</h2>
+<h1>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h1>
+
+<h3>
+<a id="train" class="anchor" href="#train" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Train</h3>
 
 <ul>
 <li>
-<p>Train</p>
+<p>Train  </p>
 
 <ul>
 <li><code>./lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file /tmp/lda_model.txt --burn_in_iterations 100 --total_iterations 150</code></li>
-<li>After training completes, you will see a file <code>/tmp/lda_model.txt</code> generated. This file stores the training result. Each line is the topic distribution of a word. The first element is the word string, then its occurrence count within each topic. You could use view_model.py to convert the model to a readable text.</li>
 </ul>
 </li>
 <li>
@@ -164,7 +139,33 @@ a 2 is 1 b 1 character 1 after 1
 <code>model_file</code>: The output file of the trained model.</li>
 <li>
 <code>training_data_file</code>: The training data.</li>
-<li>Inferring flags:</li>
+</ul>
+</li>
+<li>
+<p>Trained Model</p>
+
+<ul>
+<li>After training completes, you will see a file <code>/tmp/lda_model.txt</code> generated. This file stores the training result. Each line is the topic distribution of a word. The first element is the word string, then its occurrence count within each topic.</li>
+<li>You could use view_model.py to convert the model to a readable text.</li>
+</ul>
+</li>
+</ul>
+
+<h3>
+<a id="infer" class="anchor" href="#infer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Infer</h3>
+
+<ul>
+<li>
+<p>Infer unseen documents:</p>
+
+<ul>
+<li><code>./infer --alpha 0.1 --beta 0.01 --inference_data_file testdata/test_data.txt --inference_result_file /tmp/inference_result.txt --model_file /tmp/lda_model.txt --total_iterations 15 --burn_in_iterations 10</code></li>
+</ul>
+</li>
+<li>
+<p>Inferring flags:</p>
+
+<ul>
 <li>
 <code>alpha</code> and <code>beta</code> should be the same with training.</li>
 <li>
@@ -173,14 +174,132 @@ a 2 is 1 b 1 character 1 after 1
 <code>burn_in_iterations</code>: For an unseen document, we will average the document_topic_distribution of the last (total_iterations-burn_in_iterations) iterations as the final document_topic_distribution.</li>
 </ul>
 </li>
-<li>
-<p>Infer unseen documents:</p>
+</ul>
+
+<h1>
+<a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example</h1>
+
+<p>Here we provide an simple example using the plda and New York Times news articles to train a topic model.</p>
 
 <ul>
-<li><code>./infer --alpha 0.1 --beta 0.01 --inference_data_file testdata/test_data.txt --inference_result_file /tmp/inference_result.txt --model_file /tmp/lda_model.txt --total_iterations 15 --burn_in_iterations 10</code></li>
-</ul>
+<li>
+<p>Download data<br>
+ We use <a href="https://archive.ics.uci.edu/ml/datasets/Bag+of+Words">Bag of Words Data Set</a> created by David Newman, UCI. This data set contains five text collections in the form of bags-of-words. We use the New York Times news articles collection which includes 300000 documents, 102660 words in the vocabulary. The total number of words in this collection is approximately 100,000,000. The stopwords have been removed.  </p>
+
+<pre><code>cd plda/testdata
+./get_NYTimes.sh
+</code></pre>
+</li>
+<li><p>Change the data to the proper format as described above.<br>
+  <code>./format.py nytimes</code><br>
+ Because the data set is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". </p></li>
+<li>
+<p>Train parallelly
+ We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory. </p>
+
+<p><code>mpiexec -n 8 ./mpi_lda --num_topics 10 --alpha 0.1 --beta 0.01 --training_data_file testdata/nytimes.txt --model_file /tmp/ny_model_8.txt --burn_in_iterations 100 --total_iterations 150</code></p>
+
+<p><strong>Note:</strong> The above executing command can be ran from any of the 8 hosts, but the date set(nytimes.txt) should be copied to the identical location of all the hosts.</p>
+</li>
+<li>
+<p>Training performance
+ Also, we ran the same example with different number of machines from 1~8 on the same cluster, and here is the results: </p>
+
+<ul>
+<li>
+<p>Memory:</p>
+
+<p><img src="testdata/plda-memory.png" alt="plda-memory"></p>
+
+<p><em>1. The memory cost is almost linearly reduced as the number of the machines increase.</em></p>
+
+<p><em>2. During running time, all the documents are distributely stored. If your corpus is huge, you could add more machines.</em></p>
+
+<p><em>3. The memory cost is NUM_VOCABULARY * NUM_TOPICS * sizeof(int64) bytes, and you have to make sure the sum of all machines' memory must be greater than this. If not, you have to reduce your vocabulary size or reduce num_topics.</em></p>
+</li>
+<li>
+<p>Speedup:</p>
+
+<p><img src="testdata/plda-speedup.png" alt="plda-speedup"></p>
+
+<p><em>1. For each iteration, all computers do GibbsSampling parallelly. At the end of iterations, they reduces updated model. Generally, if the corpus is large and the model is small, the speedup is almost linear. If the model is large and the corpus is small, the speedup may be worse than linear.</em></p>
+
+<p><em>2. The performance may also be infected by the conditions of network/computing resource of the mpi-cluster.</em></p>
 </li>
 </ul>
+</li>
+<li>
+<p>View Model
+We can view the trained mobel using view_model.py to convert the model to a readable text.</p>
+
+<p><code>python view_model.py /tmp/ny_model_8.txt</code></p>
+
+<p>And we selete some words from it in each topic as shown in below table:</p>
+</li>
+</ul>
+
+<table>
+  <tr>
+    <th align="center">Topic<br>0</th>
+    <th align="center">Topic<br>1</th>
+    <th align="center">Topic<br>2</th>
+    <th align="center">Topic<br>3</th>
+    <th align="center">Topic<br>4</th>
+    <th align="center">Topic<br>5</th>
+    <th align="center">Topic<br>6</th>
+    <th align="center">Topic<br>7</th>
+    <th align="center">Topic<br>8</th>
+    <th align="center">Topic<br>9</th>
+  </tr>
+  <tr>
+    <td align="center">law</td>
+    <td align="center">president</td>
+    <td align="center">food</td>
+    <td align="center">government</td>
+    <td align="center">patient</td>
+    <td align="center">com</td>
+    <td align="center">company</td>
+    <td align="center">team</td>
+    <td align="center">show</td>
+    <td align="center">school</td>
+  </tr>
+  <tr>
+    <td align="center">case</td>
+    <td align="center">election</td>
+    <td align="center">cup</td>
+    <td align="center">official</td>
+    <td align="center">drug</td>
+    <td align="center">web</td>
+    <td align="center">million</td>
+    <td align="center">game</td>
+    <td align="center">film</td>
+    <td align="center">student</td>
+  </tr>
+  <tr>
+    <td align="center">court</td>
+    <td align="center">political</td>
+    <td align="center">water</td>
+    <td align="center">military</td>
+    <td align="center">doctor</td>
+    <td align="center">computer</td>
+    <td align="center">market</td>
+    <td align="center">season</td>
+    <td align="center">movie</td>
+    <td align="center">children</td>
+  </tr>
+  <tr>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+    <th align="center">...</th>
+  </tr>
+</table>
 
 <h1>
 <a id="citation" class="anchor" href="#citation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Citation</h1>
@@ -198,46 +317,46 @@ a 2 is 1 b 1 character 1 after 1
   title = {PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing},
   year = {2011},
   journal = {ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning},
-  note = {Software available at \url{http://code.google.com/p/plda}}
+  note = {Software available at \url{https://github.com/obdg/plda}}
 }
 </code></pre>
 
-<p>If you have any questions, please visit <a href="http://groups.google.com/group/plda">http://groups.google.com/group/plda</a></p>
+<p>If you have any questions, please visit <a href="https://github.com/obdg/plda">https://github.com/obdg/plda</a></p>
 
 <h1>
 <a id="references" class="anchor" href="#references" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>References</h1>
 
-<p>(1) PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011.</p>
+<p>[1] PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011.</p>
 
 <blockquote>
 <p><a href="http://plda.googlecode.com/files/plda_plus_acmtist2011.pdf">http://plda.googlecode.com/files/plda_plus_acmtist2011.pdf</a></p>
 </blockquote>
 
-<p>(2) PLDA: Parallel Latent Dirichlet Allocation for Large-scale Applications. Yi Wang, Hongjie Bai, Matt Stanton, Wen-Yen Chen, and Edward Y. Chang. AAIM 2009.</p>
+<p>[2] PLDA: Parallel Latent Dirichlet Allocation for Large-scale Applications. Yi Wang, Hongjie Bai, Matt Stanton, Wen-Yen Chen, and Edward Y. Chang. AAIM 2009.</p>
 
 <blockquote>
 <p><a href="http://plda.googlecode.com/files/aaim.pdf">http://plda.googlecode.com/files/aaim.pdf</a></p>
 </blockquote>
 
-<p>(3) Latent Dirichlet Allocation, Blei et al., JMLR (3), 2003.</p>
+<p>[3] Latent Dirichlet Allocation, Blei et al., JMLR (3), 2003.</p>
 
 <blockquote>
 <p><a href="http://www.cs.princeton.edu/%7Eblei/papers/BleiNgJordan2003.pdf">http://www.cs.princeton.edu/~blei/papers/BleiNgJordan2003.pdf</a></p>
 </blockquote>
 
-<p>(4) Finding scientific topics, Griffiths and Steyvers, PNAS (101), 2004.</p>
+<p>[4] Finding scientific topics, Griffiths and Steyvers, PNAS (101), 2004.</p>
 
 <blockquote>
 <p><a href="http://www.pnas.org/content/101/suppl.1/5228.full.pdf">http://www.pnas.org/content/101/suppl.1/5228.full.pdf</a></p>
 </blockquote>
 
-<p>(5) Fast collapsed gibbs sampling for latent dirichlet allocation, Porteous et al., KDD 2008.</p>
+<p>[5] Fast collapsed gibbs sampling for latent dirichlet allocation, Porteous et al., KDD 2008.</p>
 
 <blockquote>
 <p><a href="http://portal.acm.org/citation.cfm?id=1401960">http://portal.acm.org/citation.cfm?id=1401960</a></p>
 </blockquote>
 
-<p>(6) Distributed Inference for Latent Dirichlet Allocation, Newman et al., NIPS 2007.</p>
+<p>[6] Distributed Inference for Latent Dirichlet Allocation, Newman et al., NIPS 2007.</p>
 
 <blockquote>
 <p><a href="http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf">http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf</a></p>
@@ -245,7 +364,7 @@ a 2 is 1 b 1 character 1 after 1
 
 <p>Papers using plda code:</p>
 
-<p>(7) Collaborative Filtering for Orkut Communities: Discovery of User Latent Behavior. Wen-Yen Chen et al., WWW 2009.</p>
+<p>[7] Collaborative Filtering for Orkut Communities: Discovery of User Latent Behavior. Wen-Yen Chen et al., WWW 2009.</p>
 
 <blockquote>
 <p><a href="http://www.cs.ucsb.edu/%7Ewychen/publications/fp365-chen.pdf">http://www.cs.ucsb.edu/~wychen/publications/fp365-chen.pdf</a></p>
