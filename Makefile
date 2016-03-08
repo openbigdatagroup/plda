@@ -2,36 +2,27 @@ CC=g++
 MPICC=mpicxx
 
 CFLAGS=-O3 -Wall -Wno-sign-compare
+OBJ_PATH = ./obj
 
 all: lda infer mpi_lda
 
 clean:
-	rm -f *.o
+	rm -rf $(OBJ_PATH)
 	rm -f lda mpi_lda infer
 
-cmd_flags.o: cmd_flags.cc cmd_flags.h
-	$(CC) -c $(CFLAGS)  cmd_flags.cc -o cmd_flags.o
+OBJ_SRCS := cmd_flags.cc common.cc document.cc model.cc accumulative_model.cc sampler.cc
+ALL_OBJ = $(patsubst %.cc, %.o, $(OBJ_SRCS))
+OBJ = $(addprefix $(OBJ_PATH)/, $(ALL_OBJ))
 
-common.o: common.cc common.h
-	$(CC) -c $(CFLAGS)  common.cc -o common.o
+$(OBJ_PATH)/%.o: %.cc
+	@ mkdir -p $(OBJ_PATH) 
+	$(CC) -c $(CFLAGS) $< -o $@
 
-document.o: document.cc document.h common.o
-	$(CC) -c $(CFLAGS)  document.cc -o document.o
+lda: lda.cc $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) $< -o $@
 
-model.o: model.cc model.h common.o
-	$(CC) -c $(CFLAGS)  model.cc -o model.o
+infer: infer.cc $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) $< -o $@
 
-accumulative_model.o: accumulative_model.cc accumulative_model.h common.o model.o
-	$(CC) -c $(CFLAGS)  accumulative_model.cc -o accumulative_model.o
-
-sampler.o: sampler.cc sampler.h common.o document.o model.o accumulative_model.o
-	$(CC) -c $(CFLAGS)  sampler.cc -o sampler.o
-
-lda: lda.cc cmd_flags.o common.o document.o model.o accumulative_model.o sampler.o
-	$(CC) $(CFLAGS) lda.cc cmd_flags.o common.o document.o model.o accumulative_model.o sampler.o -o lda
-
-infer: infer.cc cmd_flags.o common.o document.o model.o accumulative_model.o sampler.o
-	$(CC) $(CFLAGS) infer.cc cmd_flags.o common.o document.o model.o accumulative_model.o sampler.o -o infer
-
-mpi_lda: mpi_lda.cc cmd_flags.o common.o document.o model.o accumulative_model.o sampler.o
-	$(MPICC) $(CFLAGS) mpi_lda.cc cmd_flags.o common.o document.o model.o accumulative_model.o sampler.o -o mpi_lda
+mpi_lda: mpi_lda.cc $(OBJ)
+	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@
