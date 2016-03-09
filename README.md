@@ -25,7 +25,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
       Please refer to [install weave scope](https://www.weave.works/install-weave-scope/).
 
 # Installation #
-### Install mpich
+### Install MPICH
 * Download the latest mpich [here](https://www.mpich.org/downloads/), and install.  
 
 ### Install PLDA
