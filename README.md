@@ -2,10 +2,11 @@
 
 Welcome to PLDA.
 
-PLDA is free software. Please see the file COPYING for details.
 PLDA is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) [1,2]. We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA [3]. The carefully designed architecture is expected to support extensions of this algorithm.
 
 We will release an enhanced parallel implementation of LDA, named as PLDA+ [2], which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.
+
+PLDA is a free software. Please see COPYING for details.
 
 # Requirement #
 Parallel lda must be run in linux environment with g++ compiler and [mpich](https://www.mpich.org/) installed.
