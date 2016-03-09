@@ -1,6 +1,9 @@
 # Introduction #
 
-Plda is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) [1,2]. We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA [3]. The carefully designed architecture is expected to support extensions of this algorithm.
+Welcome to PLDA.
+
+PLDA is free software. Please see the file COPYING for details.
+PLDA is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) [1,2]. We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA [3]. The carefully designed architecture is expected to support extensions of this algorithm.
 
 We will release an enhanced parallel implementation of LDA, named as PLDA+ [2], which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.
 
@@ -25,7 +28,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 * Download the latest mpich [here](https://www.mpich.org/downloads/), and install.  
 
 ### Install PLDA
-* Download and build plda 
+* Download and build plda
 
     ```
     git clone https://github.com/obdg/plda.git  
@@ -103,7 +106,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 
   * Change the data to the proper format as described above.  
       `./format.py nytimes`  
-     Because the dataset is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". 
+     Because the dataset is big, this step will take several minutes. It will create an single training data file named "nytimes.txt".
 
   * Train parallelly  
      We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory.   
@@ -123,7 +126,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
      * Speedup:  
 
       ![plda-speedup](testdata/plda-speedup.png)  
-      
+
       *1. The curv Perfect is the base-line of linear speedup to compare.*  
       *2. For each iteration, all computers do GibbsSampling parallelly. At the end of iterations, they reduces updated model. Generally, if the corpus is large and the model is small, the speedup is almost linear. If the model is large and the corpus is small, the speedup may be worse than linear.*  
       *3. The performance may also be infected by the conditions of network/computing resource of the mpi-cluster.*
