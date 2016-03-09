@@ -22,9 +22,13 @@
       <h1>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h1>
 
-<p>Plda is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) [1,2]. We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA [3]. The carefully designed architecture is expected to support extensions of this algorithm.</p>
+<p>Welcome to PLDA.</p>
+
+<p>PLDA is a parallel C++ implementation of Latent Dirichlet Allocation (LDA) [1,2]. We are expecting to present a highly optimized parallel implemention of the Gibbs sampling algorithm for the training/inference of LDA [3]. The carefully designed architecture is expected to support extensions of this algorithm.</p>
 
 <p>We will release an enhanced parallel implementation of LDA, named as PLDA+ [2], which can improve scalability of LDA by signiﬁcantly reducing the unparallelizable communication bottleneck and achieve good load balancing.</p>
+
+<p>PLDA is a free software. Please see COPYING for details.</p>
 
 <h1>
 <a id="requirement" class="anchor" href="#requirement" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Requirement</h1>
@@ -39,10 +43,10 @@
 <p>Use Docker to simulate parallel environment.  </p>
 
 <pre><code>cd plda/docker
-./run_docker.sh
+./run_docker.sh 3  # pass in the number of mpi nodes
 </code></pre>
 
-<p>It will first build the plda image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.</p>
+<p>It will first build the PLDA image, then create a container as "master" and two other containers named plda-node-1 and plda-node-2, respectively. After the containers started, the master will start training in these nodes.</p>
 </li>
 <li><p>Visualization<br>
   We recommend that you use <a href="https://www.weave.works/products/weave-scope/">Weave Scope</a> to monitor Docker containers.<br>
@@ -53,7 +57,7 @@
 <a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h1>
 
 <h3>
-<a id="install-mpich" class="anchor" href="#install-mpich" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install mpich</h3>
+<a id="install-mpich" class="anchor" href="#install-mpich" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install MPICH</h3>
 
 <ul>
 <li>Download the latest mpich <a href="https://www.mpich.org/downloads/">here</a>, and install.<br>
@@ -61,11 +65,11 @@
 </ul>
 
 <h3>
-<a id="install-plda" class="anchor" href="#install-plda" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install plda</h3>
+<a id="install-plda" class="anchor" href="#install-plda" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Install PLDA</h3>
 
 <ul>
 <li>
-<p>Download and build plda </p>
+<p>Download and build plda</p>
 
 <pre><code>git clone https://github.com/obdg/plda.git  
 cd plda  
@@ -181,12 +185,12 @@ a 2 is 1 b 1 character 1 after 1
 <h1>
 <a id="example" class="anchor" href="#example" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Example</h1>
 
-<p>Here we provide an simple example using the plda and New York Times news articles to train a topic model.</p>
+<p>Here we provide an simple example using the PLDA and New York Times news articles to train a topic model.</p>
 
 <ul>
 <li>
 <p>Download data<br>
- We use <a href="https://archive.ics.uci.edu/ml/datasets/Bag+of+Words">Bag of Words Data Set</a> created by David Newman, UCI. This data set contains five text collections in the form of bags-of-words. We use the New York Times news articles collection which includes 300000 documents, 102660 words in the vocabulary. The total number of words in this collection is approximately 100,000,000. The stopwords have been removed.  </p>
+ We use <a href="https://archive.ics.uci.edu/ml/datasets/Bag+of+Words">Bag of Words Data Set</a> created by David Newman, UCI. This dataset contains five text collections in the form of bags-of-words. We use the New York Times news articles collection which includes 300000 documents, 102660 words in the vocabulary. The total number of words in this collection is approximately 100,000,000. The stopwords have been removed.  </p>
 
 <pre><code>cd plda/testdata
 ./get_NYTimes.sh
@@ -194,7 +198,7 @@ a 2 is 1 b 1 character 1 after 1
 </li>
 <li><p>Change the data to the proper format as described above.<br>
   <code>./format.py nytimes</code><br>
- Because the data set is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". </p></li>
+ Because the dataset is big, this step will take several minutes. It will create an single training data file named "nytimes.txt".</p></li>
 <li><p>Train parallelly<br>
  We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory.<br>
  <code>mpiexec -n 8 ./mpi_lda --num_topics 10 --alpha 0.1 --beta 0.01 --training_data_file testdata/nytimes.txt --model_file /tmp/ny_model_8.txt --burn_in_iterations 100 --total_iterations 150</code><br>
@@ -320,7 +324,7 @@ And we selete some words from it in each topic as shown in below table:</p></li>
 <h1>
 <a id="citation" class="anchor" href="#citation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Citation</h1>
 
-<p>If you wish to publish any work based on plda, please cite our paper as:</p>
+<p>If you wish to publish any work based on PLDA, please cite our paper as:</p>
 
 <pre><code>Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun, PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011. Software available at http://code.google.com/p/plda.
 </code></pre>
@@ -378,7 +382,7 @@ And we selete some words from it in each topic as shown in below table:</p></li>
 <p><a href="http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf">http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf</a></p>
 </blockquote>
 
-<p>Papers using plda code:</p>
+<p>Papers using PLDA code:</p>
 
 <p>[7] Collaborative Filtering for Orkut Communities: Discovery of User Latent Behavior. Wen-Yen Chen et al., WWW 2009.</p>
 
