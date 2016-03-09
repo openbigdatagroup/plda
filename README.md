@@ -95,7 +95,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
   Here we provide an simple example using the PLDA and New York Times news articles to train a topic model.
 
   * Download data  
-     We use [Bag of Words Data Set](https://archive.ics.uci.edu/ml/datasets/Bag+of+Words) created by David Newman, UCI. This data set contains five text collections in the form of bags-of-words. We use the New York Times news articles collection which includes 300000 documents, 102660 words in the vocabulary. The total number of words in this collection is approximately 100,000,000. The stopwords have been removed.  
+     We use [Bag of Words Data Set](https://archive.ics.uci.edu/ml/datasets/Bag+of+Words) created by David Newman, UCI. This dataset contains five text collections in the form of bags-of-words. We use the New York Times news articles collection which includes 300000 documents, 102660 words in the vocabulary. The total number of words in this collection is approximately 100,000,000. The stopwords have been removed.  
     ```
     cd plda/testdata
     ./get_NYTimes.sh
@@ -103,7 +103,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 
   * Change the data to the proper format as described above.  
       `./format.py nytimes`  
-     Because the data set is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". 
+     Because the dataset is big, this step will take several minutes. It will create an single training data file named "nytimes.txt". 
 
   * Train parallelly  
      We ran the example on a mpi-cluster with 8 machines, each with a Intel Xeon CPU E5-1410(2.8GHz) and 16GB of memory.   
