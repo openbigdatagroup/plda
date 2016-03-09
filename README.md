@@ -14,7 +14,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
     ./run_docker.sh
     ```
 
-    It will first build the plda image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.
+    It will first build the PLDA image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.
 
   * Visualization  
       We recommend that you use [Weave Scope](https://www.weave.works/products/weave-scope/) to monitor Docker containers.  
@@ -24,7 +24,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 ### Install mpich
 * Download the latest mpich [here](https://www.mpich.org/downloads/), and install.  
 
-### Install plda
+### Install PLDA
 * Download and build plda 
 
     ```
@@ -92,7 +92,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 
 
 # Example #
-  Here we provide an simple example using the plda and New York Times news articles to train a topic model.
+  Here we provide an simple example using the PLDA and New York Times news articles to train a topic model.
 
   * Download data  
      We use [Bag of Words Data Set](https://archive.ics.uci.edu/ml/datasets/Bag+of+Words) created by David Newman, UCI. This data set contains five text collections in the form of bags-of-words. We use the New York Times news articles collection which includes 300000 documents, 102660 words in the vocabulary. The total number of words in this collection is approximately 100,000,000. The stopwords have been removed.  
@@ -222,7 +222,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
 
 # Citation #
 
-If you wish to publish any work based on plda, please cite our paper as:
+If you wish to publish any work based on PLDA, please cite our paper as:
 
 ```
 Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun, PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011. Software available at http://code.google.com/p/plda.
@@ -263,7 +263,7 @@ If you have any questions, please visit https://github.com/obdg/plda
 [6] Distributed Inference for Latent Dirichlet Allocation, Newman et al., NIPS 2007.
 > http://books.nips.cc/papers/files/nips20/NIPS2007_0672.pdf
 
-Papers using plda code:
+Papers using PLDA code:
 
 [7] Collaborative Filtering for Orkut Communities: Discovery of User Latent Behavior. Wen-Yen Chen et al., WWW 2009.
 > http://www.cs.ucsb.edu/~wychen/publications/fp365-chen.pdf
