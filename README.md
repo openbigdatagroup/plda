@@ -14,10 +14,10 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
   * Use Docker to simulate parallel environment.  
     ```
     cd plda/docker
-    ./run_docker.sh
+    ./run_docker.sh 3  # pass in the number of mpi nodes
     ```
 
-    It will first build the PLDA image, then create a container as "master" and two other containers named node1 and node2, respectively. After the containers started, the master will start training in node1 and node2.
+    It will first build the PLDA image, then create a container as "master" and two other containers named plda-node-1 and plda-node-2, respectively. After the containers started, the master will start training in these nodes.
 
   * Visualization  
       We recommend that you use [Weave Scope](https://www.weave.works/products/weave-scope/) to monitor Docker containers.  

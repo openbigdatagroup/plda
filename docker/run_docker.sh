@@ -13,15 +13,14 @@ echo "Setting up $NODE_NUM node"
 echo "Run dockers and collect ips..."
 # at least setting up 1 node called master
 docker run -v $(readlink -f ..):/root/plda -d -h master --name plda-master plda
-echo "" > hosts
+docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-master > hosts
 for((i=2; i<=$NODE_NUM; i++)); do
-  echo $i
   docker run -v $(readlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i plda
   docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-node-$i >> hosts
 done
 
 echo "Training..."
-docker exec plda-master bash -c "cd /root/plda && make && time mpiexec -f ./docker/hosts -n $NODE_NUM ./mpi_lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file testdata/lda_model.txt --total_iterations 10"
+docker exec plda-master bash -c "cd /root/plda && make && time mpiexec -f ./docker/hosts -n $NODE_NUM ./mpi_lda --num_topics 2 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file testdata/lda_model.txt --total_iterations 150"
 echo "Finished training."
 
 echo "Stop and remove containers..."
