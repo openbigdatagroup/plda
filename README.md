@@ -250,13 +250,13 @@ If you have any questions, please visit https://github.com/obdg/plda
 # References #
 
 [1] PLDA+: Parallel Latent Dirichlet Allocation with Data Placement and Pipeline Processing. Zhiyuan Liu, Yuzhou Zhang, Edward Y. Chang, Maosong Sun. ACM Transactions on Intelligent Systems and Technology, special issue on Large Scale Machine Learning. 2011.
-> http://plda.googlecode.com/files/plda_plus_acmtist2011.pdf
+> http://dl.acm.org/citation.cfm?id=1961198
 
 [2] PLDA: Parallel Latent Dirichlet Allocation for Large-scale Applications. Yi Wang, Hongjie Bai, Matt Stanton, Wen-Yen Chen, and Edward Y. Chang. AAIM 2009.
-> http://plda.googlecode.com/files/aaim.pdf
+> http://dl.acm.org/citation.cfm?id=1574062
 
 [3] Latent Dirichlet Allocation, Blei et al., JMLR (3), 2003.
-> http://www.cs.princeton.edu/~blei/papers/BleiNgJordan2003.pdf
+> http://ai.stanford.edu/~ang/papers/jair03-lda.pdf
 
 [4] Finding scientific topics, Griffiths and Steyvers, PNAS (101), 2004.
 > http://www.pnas.org/content/101/suppl.1/5228.full.pdf
@@ -270,4 +270,4 @@ If you have any questions, please visit https://github.com/obdg/plda
 Papers using PLDA code:
 
 [7] Collaborative Filtering for Orkut Communities: Discovery of User Latent Behavior. Wen-Yen Chen et al., WWW 2009.
-> http://www.cs.ucsb.edu/~wychen/publications/fp365-chen.pdf
+> http://dl.acm.org/citation.cfm?id=1526801
