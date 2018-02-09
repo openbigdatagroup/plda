@@ -2,7 +2,7 @@
 #include <string>
 #include <pqxx/pqxx>
 
-#define STATUS_LDA_ANALYSIS 5
+#define STATUS_LDA_ANALYSIS 6
 #define STATUS_COMPLETE  6
 
 using namespace std;
@@ -10,10 +10,10 @@ using namespace pqxx;
 
 int main(int argc, char* argv[]) {
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url from topic_modeling_request "
-            "where id =  and status = ";
-    string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ";
-    string const base_req_update_sql = "UPDATE * topic_modeling_request set status = 6 where id = ";
-    string const base_page_data_sql = "SELECT word_dict from topic_modeling_url_page_data where topic_request_id = ";
+            "where id = ?  and status = ?";
+    string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
+    string const base_req_update_sql = "UPDATE topic_modeling_request set status = 6 where id = ?";
+    string const base_page_data_sql = "SELECT word_dict from topic_modeling_url_page_data where topic_request_id = ?";
     string sql;
     int pk = 118;
     unsigned long pos;
@@ -30,10 +30,10 @@ int main(int argc, char* argv[]) {
 
         /* Create SQL statement */
         sql = base_topic_req_sql;
-        pos = sql.find('=') + 2;
-        sql.insert(pos, std::to_string(pk));
-        pos = sql.find('=', pos + 1) + 2;
-        sql.insert(pos, std::to_string(STATUS_LDA_ANALYSIS));
+        pos = sql.find('?');
+        sql.replace(pos, 1, std::to_string(pk));
+        pos = sql.find('?');
+        sql.replace(pos, 1, std::to_string(STATUS_LDA_ANALYSIS));
 
         /* Execute SQL query */
         result requests( N.exec( sql ));
@@ -58,9 +58,10 @@ int main(int argc, char* argv[]) {
         }
 
         sql = base_req_lda_data_sql;
-        pos = sql.find('=') + 2;
-        sql.insert(pos, to_string(pk));
+        pos = sql.find('?');
+        sql.replace(pos, 1, to_string(pk));
         result lda_data( N.exec( sql ));
+        N.commit();
 
         /* Create a transactional object. */
         work W(C);
@@ -69,8 +70,8 @@ int main(int argc, char* argv[]) {
         for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
             /* Create  SQL UPDATE statement */
             sql = base_req_update_sql;
-            pos = sql.find('=') + 2;
-            sql.insert(pos, std::to_string(pk));
+            pos = sql.find('?');
+            sql.replace(pos, 1, std::to_string(pk));
             /* Execute SQL query */
             W.exec( sql );
             W.commit();
@@ -80,8 +81,8 @@ int main(int argc, char* argv[]) {
         }
 
         sql = base_page_data_sql;
-        pos = sql.find('=') + 2;
-        sql.insert(pos, std::to_string(pk));
+        pos = sql.find('?');
+        sql.replace(pos, 1, std::to_string(pk));
         result page_data( N.exec( sql ));
         for (result::const_iterator c = page_data.begin(); c != page_data.end(); ++c) {
 
