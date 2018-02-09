@@ -11,9 +11,9 @@ using namespace pqxx;
 int main(int argc, char* argv[]) {
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url from topic_modeling_request "
             "where id =  and status = ";
-    string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request = ";
+    string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ";
     string const base_req_update_sql = "UPDATE * topic_modeling_request set status = 6 where id = ";
-    string const base_page_data_sql = "SELECT word_dict from topic_modeling_url_page_data where topic_request = ";
+    string const base_page_data_sql = "SELECT word_dict from topic_modeling_url_page_data where topic_request_id = ";
     string sql;
     int pk = 118;
     unsigned long pos;
@@ -45,7 +45,9 @@ int main(int argc, char* argv[]) {
         for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
             request_exits = true;
             target_url_is_included = c[0].as<bool>();
-            target_url = c[1].as<string>();
+            if(!c[1].is_null()){
+                target_url = c[1].as<string>();
+            }
             break;
         }
 
@@ -56,8 +58,8 @@ int main(int argc, char* argv[]) {
         }
 
         sql = base_req_lda_data_sql;
-        pos = sql.find('?') + 2;
-        sql.insert(pos, std::to_string(pk));
+        pos = sql.find('=') + 2;
+        sql.insert(pos, to_string(pk));
         result lda_data( N.exec( sql ));
 
         /* Create a transactional object. */
@@ -73,6 +75,7 @@ int main(int argc, char* argv[]) {
             W.exec( sql );
             W.commit();
             C.disconnect ();
+            cout << "request " << pk << " is already completed" << endl;
             return 1;
         }
 
