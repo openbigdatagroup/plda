@@ -6,3 +6,4 @@ hosts
 *model.txt
 cmake-build-debug
 CMakeLists.txt
+db_test
