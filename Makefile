@@ -26,3 +26,6 @@ infer: infer.cc $(OBJ)
 
 mpi_lda: mpi_lda.cc $(OBJ)
 	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@
+
+db_test: db_test.cpp $(OBJ)
+	$(CC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
