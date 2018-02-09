@@ -2,7 +2,7 @@
 #include <string>
 #include <pqxx/pqxx>
 
-#define STATUS_LDA_ANALYSIS 5
+#define STATUS_LDA_ANALYSIS 6
 #define STATUS_COMPLETE  6
 
 using namespace std;
@@ -13,7 +13,9 @@ int main(int argc, char* argv[]) {
             "where id = ?  and status = ?";
     string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
     string const base_req_update_sql = "UPDATE topic_modeling_request set status = 6 where id = ?";
-    string const base_page_data_sql = "SELECT word_dict from topic_modeling_url_page_data where topic_request_id = ?";
+    string const base_page_topic_rel_sql = "SELECT pagedata_id from topic_modeling_url_page_data_topic_request "
+            "where topicmodelingrequest_id = ?";
+    string const base_page_sql = "SELECT word_dict from topic_modeling_url_page_data where id = ?";
     string sql;
     int pk = 118;
     unsigned long pos;
@@ -64,6 +66,10 @@ int main(int argc, char* argv[]) {
         N.commit();
 
         /* Create a transactional object. */
+
+        if (false){
+
+
         work W(C);
 
         /* if lda result exists, it means it is completed */
@@ -80,12 +86,25 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        sql = base_page_data_sql;
+        }
+
+        sql = base_page_topic_rel_sql;
         pos = sql.find('?');
         sql.replace(pos, 1, std::to_string(pk));
-        result page_data( N.exec( sql ));
-        for (result::const_iterator c = page_data.begin(); c != page_data.end(); ++c) {
-
+        nontransaction N2(C);
+        result page_topic_rel( N2.exec( sql ));
+        string word_dict;
+        for (result::const_iterator c = page_topic_rel.begin(); c != page_topic_rel.end(); ++c) {
+            int page_id = c[0].as<int>();
+            sql = base_page_sql;
+            pos = sql.find('?');
+            sql.replace(pos, 1, std::to_string(page_id));
+            result page_data(N2.exec(sql));
+            for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
+                string word_dict = c2[0].as<string>();
+                cout << word_dict << endl;
+            }
+            break;
         }
 
         cout << "Operation done successfully" << endl;
