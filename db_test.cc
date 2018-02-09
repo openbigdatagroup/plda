@@ -2,7 +2,7 @@
 #include <string>
 #include <pqxx/pqxx>
 
-#define STATUS_LDA_ANALYSIS 6
+#define STATUS_LDA_ANALYSIS 5
 #define STATUS_COMPLETE  6
 
 using namespace std;
