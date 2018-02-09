@@ -11,10 +11,11 @@ using namespace pqxx;
 int main(int argc, char* argv[]) {
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url from topic_modeling_request "
             "where pk=? and status=?";
-    string const base_req_lda_dat_sql = "SELECT * from topic_modeling_lda_data where topic_request=?";
+    string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request=?";
     string const base_req_update_sql = "UPDATE * topic_modeling_request set status = 6 where pk=?";
+    string const base_page_data_sql = "SELECT word_dict from topic_modeling_url_page_data where topic_request=?";
     string sql;
-    int pk = 4;
+    int pk = 118;
     unsigned long pos;
     try {
         connection C("dbname = lm_backend user = lm_admin password = 1qazxsw2 \
@@ -25,15 +26,15 @@ int main(int argc, char* argv[]) {
             cout << "Can't open database" << endl;
             return 1;
         }
+        /* Create a non-transactional object. */
+        nontransaction N(C);
+
         /* Create SQL statement */
         sql = base_topic_req_sql;
         pos = sql.find('?');
         sql.insert(pos, std::to_string(pk));
         pos = sql.find('?');
         sql.insert(pos, std::to_string(STATUS_LDA_ANALYSIS));
-
-        /* Create a non-transactional object. */
-        nontransaction N(C);
 
         /* Execute SQL query */
         result requests( N.exec( sql ));
@@ -51,20 +52,20 @@ int main(int argc, char* argv[]) {
 
         if (!request_exits){
             C.disconnect();
+            cout << "request " << pk << " does not exist" << endl;
             return 1;
         }
-        cout << "Operation done successfully" << endl;
-        C.disconnect ();
 
-        sql = base_req_lda_dat_sql;
+        sql = base_req_lda_data_sql;
         pos = sql.find('?');
         sql.insert(pos, std::to_string(pk));
-
         result lda_data( N.exec( sql ));
+
+        /* Create a transactional object. */
+        work W(C);
 
         /* if lda result exists, it means it is completed */
         for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
-            work W(C);
             /* Create  SQL UPDATE statement */
             sql = base_req_update_sql;
             pos = sql.find('?');
@@ -72,10 +73,20 @@ int main(int argc, char* argv[]) {
             /* Execute SQL query */
             W.exec( sql );
             W.commit();
+            C.disconnect ();
             return 1;
         }
 
+        sql = base_page_data_sql;
+        pos = sql.find('?');
+        sql.insert(pos, std::to_string(pk));
+        result page_data( N.exec( sql ));
+        for (result::const_iterator c = page_data.begin(); c != page_data.end(); ++c) {
 
+        }
+
+        cout << "Operation done successfully" << endl;
+        C.disconnect ();
 
     } catch (const std::exception &e) {
         cerr << e.what() << std::endl;
