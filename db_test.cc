@@ -2,6 +2,7 @@
 #include <string>
 #include <pqxx/pqxx>
 
+#define STATUS_LDA_ANALYSIS 5
 #define STATUS_LDA_ANALYSIS 6
 #define STATUS_COMPLETE  6
 
@@ -102,7 +103,24 @@ int main(int argc, char* argv[]) {
             result page_data(N2.exec(sql));
             for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
                 string word_dict = c2[0].as<string>();
-                cout << word_dict << endl;
+                istringstream ss(word_dict);
+
+                string word;
+                string count_str;
+                int count;
+                while (ss >> word >> count_str){
+                    if (word.at(0) == '{'){
+                        word = word.substr(2, word.size() - 3);
+                    }
+                    else{
+                        word = word.substr(1, word.size() - 3);
+                    }
+                    count_str.erase(count_str.size() - 1, 1);
+                    count = atoi(count_str.c_str());
+                    cout << word << ":" << count << endl;
+                }
+
+
             }
             break;
         }

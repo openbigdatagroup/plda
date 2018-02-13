@@ -29,3 +29,6 @@ mpi_lda: mpi_lda.cc $(OBJ)
 
 db_test: db_test.cc $(OBJ)
 	$(CC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
+
+db_test_lda: db_test_lda.cc $(OBJ)
+	$(CC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
