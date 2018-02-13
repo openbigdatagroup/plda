@@ -30,6 +30,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <regex>
 #include <pqxx/pqxx>
 
 
@@ -53,14 +54,33 @@ namespace learning_lda {
     using std::map;
     using std::cout;
     using std::endl;
+    using std::regex_match;
+    using std::regex;
     using namespace pqxx;
+
+    int utf8_strlen(const string& str)
+    {
+        int c,i,ix,q;
+        for (q=0, i=0, ix=str.length(); i < ix; i++, q++)
+        {
+            c = (unsigned char) str[i];
+            if      (c>=0   && c<=127) i+=0;
+            else if ((c & 0xE0) == 0xC0) i+=1;
+            else if ((c & 0xF0) == 0xE0) i+=2;
+            else if ((c & 0xF8) == 0xF0) i+=3;
+                //else if (($c & 0xFC) == 0xF8) i+=4; // 111110bb //byte 5, unnecessary in 4 byte UTF-8
+                //else if (($c & 0xFE) == 0xFC) i+=5; // 1111110b //byte 6, unnecessary in 4 byte UTF-8
+            else return 0;//invalid utf8
+        }
+        return q;
+    }
 
     int LoadAndInitTrainingCorpus(const string& corpus_file,
                                   int num_topics,
                                   LDACorpus* corpus,
                                   map<string, int>* word_index_map) {
-        string const base_topic_req_sql = "SELECT target_url_is_included, target_url from topic_modeling_request "
-                "where id = ?  and status = ?";
+        string const base_topic_req_sql = "SELECT target_url_is_included, target_url, min_word_length, get_english "
+                "from topic_modeling_request where id = ?  and status = ?";
         string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
         string const base_req_update_sql = "UPDATE topic_modeling_request set status = 6 where id = ?";
         string const base_page_topic_rel_sql = "SELECT pagedata_id from topic_modeling_url_page_data_topic_request "
@@ -69,7 +89,7 @@ namespace learning_lda {
         string sql;
         int pk = 118;
         unsigned long pos;
-
+        regex alphabet(".*[a-z].*");
         corpus->clear();
         word_index_map->clear();
 
@@ -97,12 +117,16 @@ namespace learning_lda {
         bool request_exits = false;
         bool target_url_is_included;
         string target_url;
+        int min_word_length;
+        bool get_english;
         for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
             request_exits = true;
             target_url_is_included = c[0].as<bool>();
             if(!c[1].is_null()){
                 target_url = c[1].as<string>();
             }
+            min_word_length = c[2].as<int>();
+            get_english = c[3].as<bool>();
             break;
         }
 
@@ -160,21 +184,32 @@ namespace learning_lda {
                 string word;
                 string count_str;
                 int count;
+                int document_total_count = 0;
                 DocumentWordTopicsPB document;
                 while (ss >> word >> count_str){
                     if (word.at(0) == '{'){
-                        word = word.substr(2, word.size() - 3);
+                        word = word.substr(2, word.size() - 4);
                     }
                     else{
                         word = word.substr(1, word.size() - 3);
                     }
+
+                    if(utf8_strlen(word) < min_word_length){
+                        continue;
+                    }
+
+                    if(!get_english && regex_match(word, alphabet)){
+                        continue;
+                    }
+
                     count_str.erase(count_str.size() - 1, 1);
                     count = atoi(count_str.c_str());
-
+                    document_total_count += count;
                     vector<int32> topics;
                     for (int i = 0; i < count; ++i) {
                         topics.push_back(RandInt(num_topics));
                     }
+
                     int word_index;
                     map<string, int>::const_iterator iter = word_index_map->find(word);
                     if (iter == word_index_map->end()) {
@@ -183,7 +218,10 @@ namespace learning_lda {
                     } else {
                         word_index = iter->second;
                     }
-                    document.add_wordtopics(word, word_index, topics);
+
+                    if (document_total_count > 0){
+                        document.add_wordtopics(word, word_index, topics);
+                    }
                 }
                 corpus->push_back(new LDADocument(document, num_topics));
             }

@@ -9,6 +9,23 @@
 using namespace std;
 using namespace pqxx;
 
+int utf8_strlen(const string& str)
+{
+    int c,i,ix,q;
+    for (q=0, i=0, ix=str.length(); i < ix; i++, q++)
+    {
+        c = (unsigned char) str[i];
+        if      (c>=0   && c<=127) i+=0;
+        else if ((c & 0xE0) == 0xC0) i+=1;
+        else if ((c & 0xF0) == 0xE0) i+=2;
+        else if ((c & 0xF8) == 0xF0) i+=3;
+            //else if (($c & 0xFC) == 0xF8) i+=4; // 111110bb //byte 5, unnecessary in 4 byte UTF-8
+            //else if (($c & 0xFE) == 0xFC) i+=5; // 1111110b //byte 6, unnecessary in 4 byte UTF-8
+        else return 0;//invalid utf8
+    }
+    return q;
+}
+
 int main(int argc, char* argv[]) {
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url from topic_modeling_request "
             "where id = ?  and status = ?";
@@ -110,14 +127,15 @@ int main(int argc, char* argv[]) {
                 int count;
                 while (ss >> word >> count_str){
                     if (word.at(0) == '{'){
-                        word = word.substr(2, word.size() - 3);
+                        word = word.substr(2, word.size() - 4);
                     }
                     else{
                         word = word.substr(1, word.size() - 3);
                     }
                     count_str.erase(count_str.size() - 1, 1);
                     count = atoi(count_str.c_str());
-                    cout << word << ":" << count << endl;
+                    cout << word << "-" << utf8_strlen(word) << endl;
+                    //break;
                 }
 
 
