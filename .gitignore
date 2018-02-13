@@ -7,3 +7,4 @@ hosts
 cmake-build-debug
 CMakeLists.txt
 db_test
+db_test_lda

@@ -76,7 +76,7 @@ namespace learning_lda {
         return q;
     }
 
-    int LoadAndInitTrainingCorpus(const string& corpus_file,
+    int LoadAndInitTrainingCorpus(int pk,
                                   int num_topics,
                                   LDACorpus* corpus,
                                   map<string, int>* word_index_map) {
@@ -88,7 +88,6 @@ namespace learning_lda {
                 "where topicmodelingrequest_id = ?";
         string const base_page_sql = "SELECT word_dict from topic_modeling_url_page_data where id = ?";
         string sql;
-        int pk = 118;
         unsigned long pos;
         regex alphabet(".*[a-z].*");
         corpus->clear();
@@ -272,6 +271,15 @@ int main(int argc, char** argv) {
     using learning_lda::LDACmdLineFlags;
     using std::list;
 
+    int pk = 118;
+
+    for (int i = 1; i < argc; ++i) {
+        if (0 == strcmp(argv[i], "--pk")) {
+            std::istringstream(argv[i + 1]) >> pk;
+            ++i;
+        }
+    }
+
     LDACmdLineFlags flags;
     flags.ParseCmdFlags(argc, argv);
     if (!flags.CheckTrainingValidity()) {
@@ -280,7 +288,7 @@ int main(int argc, char** argv) {
     srand(time(NULL));
     LDACorpus corpus;
     map<string, int> word_index_map;
-    CHECK_GT(LoadAndInitTrainingCorpus(flags.training_data_file_,
+    CHECK_GT(LoadAndInitTrainingCorpus(pk,
                                        flags.num_topics_,
                                        &corpus, &word_index_map), 0);
     LDAModel model(flags.num_topics_, word_index_map);
