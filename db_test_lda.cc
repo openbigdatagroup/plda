@@ -32,6 +32,7 @@
 #include <iostream>
 #include <regex>
 #include <pqxx/pqxx>
+#include <cstdlib>
 
 
 #include "common.h"
@@ -92,8 +93,27 @@ namespace learning_lda {
         regex alphabet(".*[a-z].*");
         corpus->clear();
         word_index_map->clear();
+        string const base_connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 hostaddr = ? "
+                "port = 5432";
+        string connection_str = base_connection_str;
 
-        connection C("dbname = lm_backend user = lm_admin password = 1qazxsw2 hostaddr = 127.0.0.1 port = 5432");
+        const char* django_setting = std::getenv("DJANGO_SETTINGS_MODULE");
+        pos = connection_str.find('?');
+
+        if (django_setting == NULL){
+            connection_str.replace(pos, 1, "127.0.0.1");
+        }
+        else if (strcmp(django_setting, "lm_backend.settings_stage")){
+            connection_str.replace(pos, 1, "192.168.7.50");
+        }
+        else if (strcmp(django_setting, "lm_backend.settings_prod")){
+            connection_str.replace(pos, 1, "192.168.7.19");
+        }
+        else{
+            connection_str.replace(pos, 1, "127.0.0.1");
+        }
+
+        connection C(connection_str);
         if (C.is_open()) {
             cout << "Opened database successfully: " << C.dbname() << endl;
         } else {
