@@ -51,6 +51,8 @@ namespace learning_lda {
     using std::istringstream;
     using std::set;
     using std::map;
+    using std::cout;
+    using std::endl;
     using namespace pqxx;
 
     int LoadAndInitTrainingCorpus(const string& corpus_file,
@@ -185,7 +187,6 @@ namespace learning_lda {
                 }
                 corpus->push_back(new LDADocument(document, num_topics));
             }
-            break;
         }
         return corpus->size();
     }
