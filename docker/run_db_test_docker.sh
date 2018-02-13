@@ -1,9 +1,9 @@
 #!/bin/bash
 echo "Usage: ./run_docker.sh MPI_Node_Number (example: ./run_docker 3)"
 
-if [[ `docker images -q plda:latest 2> /dev/null` == "" ]]; then
-  echo "Docker image plda does not exist, build it first..."
-  docker build -t plda .
+if [[ `docker images -q db_plda:latest 2> /dev/null` == "" ]]; then
+  echo "Docker image db_plda does not exist, build it first..."
+  docker build -f db_test_dockerfile -t  db_plda .
 fi
 
 NODE_NUM=${1:-1}
@@ -12,10 +12,10 @@ echo "Setting up $NODE_NUM node"
 
 echo "Run dockers and collect ips..."
 # at least setting up 1 node called master
-docker run -net host -v $(greadlink -f ..):/root/plda -d -h master --name plda-master plda
+docker run -v $(greadlink -f ..):/root/plda -d -h master --name plda-master db_plda
 docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-master > hosts
 for((i=2; i<=$NODE_NUM; i++)); do
-  docker run -net host -v $(greadlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i plda
+  docker run -v $(greadlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i db_plda
   docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-node-$i >> hosts
 done
 

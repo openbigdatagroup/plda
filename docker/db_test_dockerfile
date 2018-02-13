@@ -9,7 +9,9 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     mpich \
     openssh-server \
-    libpqxx-dev
+    postgresql \
+    libpq-dev \
+    git
 
 RUN mkdir /var/run/sshd
 
@@ -24,6 +26,11 @@ RUN /usr/bin/ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 
 # add its ssh keys to authorized_keys
 RUN cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
+
+RUN git clone https://github.com/jtv/libpqxx.git /root/libpqxx
+WORKDIR /root/libpqxx
+RUN ./configure --disable-documentation
+RUN make install
 
 RUN mkdir /root/plda
 

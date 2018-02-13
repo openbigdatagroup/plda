@@ -4,7 +4,7 @@ MPICC=mpicxx
 CFLAGS=-O3 -Wall -Wno-sign-compare
 OBJ_PATH = ./obj
 
-all: lda infer mpi_lda
+all: lda infer mpi_lda db_test_mpi_lda
 
 clean:
 	rm -rf $(OBJ_PATH)
@@ -32,3 +32,9 @@ db_test: db_test.cc $(OBJ)
 
 db_test_lda: db_test_lda.cc $(OBJ)
 	$(CC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
+
+db_test_mpi_lda: db_test_mpi_lda.cc $(OBJ)
+	$(MPICC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
+
+mpi_lda2: mpi_lda2.cc $(OBJ)
+	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@
