@@ -90,11 +90,12 @@ namespace learning_lda {
         string sql;
         unsigned long pos;
         regex alphabet(".*[a-z].*");
-        corpus->clear();
-        word_index_map->clear();
         string const base_connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 hostaddr = ? "
                 "port = 5432";
         string connection_str = base_connection_str;
+
+        corpus->clear();
+        word_index_map->clear();
 
         const char* django_setting = std::getenv("DJANGO_SETTINGS_MODULE");
         pos = connection_str.find('?');
@@ -272,7 +273,6 @@ int main(int argc, char** argv) {
     using std::list;
 
     int pk = 118;
-
     for (int i = 1; i < argc; ++i) {
         if (0 == strcmp(argv[i], "--pk")) {
             std::istringstream(argv[i + 1]) >> pk;
