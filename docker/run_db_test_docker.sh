@@ -12,10 +12,10 @@ echo "Setting up $NODE_NUM node"
 
 echo "Run dockers and collect ips..."
 # at least setting up 1 node called master
-docker run -v $(greadlink -f ..):/root/plda -d -h master --name plda-master plda
+docker run -net host -v $(greadlink -f ..):/root/plda -d -h master --name plda-master plda
 docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-master > hosts
 for((i=2; i<=$NODE_NUM; i++)); do
-  docker run -v $(greadlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i plda
+  docker run -net host -v $(greadlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i plda
   docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-node-$i >> hosts
 done
 
