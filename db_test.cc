@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <pqxx/pqxx>
+#include<cstdlib>
 
 #define STATUS_LDA_ANALYSIS 5
 #define STATUS_LDA_ANALYSIS 6
@@ -51,9 +52,9 @@ int main(int argc, char* argv[]) {
         /* Create SQL statement */
         sql = base_topic_req_sql;
         pos = sql.find('?');
-        sql.replace(pos, 1, std::to_string(pk));
+        sql.replace(pos, 1, to_string(pk));
         pos = sql.find('?');
-        sql.replace(pos, 1, std::to_string(STATUS_LDA_ANALYSIS));
+        sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
 
         /* Execute SQL query */
         result requests( N.exec( sql ));
@@ -95,7 +96,7 @@ int main(int argc, char* argv[]) {
             /* Create  SQL UPDATE statement */
             sql = base_req_update_sql;
             pos = sql.find('?');
-            sql.replace(pos, 1, std::to_string(pk));
+            sql.replace(pos, 1, to_string(pk));
             /* Execute SQL query */
             W.exec( sql );
             W.commit();
@@ -108,7 +109,7 @@ int main(int argc, char* argv[]) {
 
         sql = base_page_topic_rel_sql;
         pos = sql.find('?');
-        sql.replace(pos, 1, std::to_string(pk));
+        sql.replace(pos, 1, to_string(pk));
         nontransaction N2(C);
         result page_topic_rel( N2.exec( sql ));
         string word_dict;
@@ -116,7 +117,7 @@ int main(int argc, char* argv[]) {
             int page_id = c[0].as<int>();
             sql = base_page_sql;
             pos = sql.find('?');
-            sql.replace(pos, 1, std::to_string(page_id));
+            sql.replace(pos, 1, to_string(page_id));
             result page_data(N2.exec(sql));
             for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
                 string word_dict = c2[0].as<string>();
