@@ -246,6 +246,7 @@ namespace learning_lda {
                 corpus->push_back(new LDADocument(document, num_topics));
             }
         }
+        C.disconnect ();
         return corpus->size();
     }
 

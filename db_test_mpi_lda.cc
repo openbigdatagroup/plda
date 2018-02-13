@@ -34,6 +34,7 @@
 #include <string>
 #include <pqxx/pqxx>
 #include <cstdlib>
+#include <regex>
 
 #include "common.h"
 #include "document.h"
@@ -41,6 +42,11 @@
 #include "accumulative_model.h"
 #include "sampler.h"
 #include "cmd_flags.h"
+
+#define STATUS_LDA_ANALYSIS 5
+#define STATUS_LDA_ANALYSIS 6
+#define STATUS_COMPLETE  6
+
 
 using std::ifstream;
 using std::ofstream;
@@ -53,10 +59,9 @@ using std::sort;
 using std::string;
 using learning_lda::LDADocument;
 
-using std::cout;
-using std::endl;
 using std::regex_match;
 using std::regex;
+
 using namespace pqxx;
 
 namespace learning_lda {
@@ -154,8 +159,6 @@ namespace learning_lda {
         string connection_str = base_connection_str;
 
         corpus->clear();
-        ifstream fin(corpus_file.c_str());
-        string line;
         int index = 0;
 
         const char* django_setting = std::getenv("DJANGO_SETTINGS_MODULE");
@@ -176,9 +179,9 @@ namespace learning_lda {
 
         connection C(connection_str);
         if (C.is_open()) {
-            cout << "Opened database successfully: " << C.dbname() << endl;
+            std::cout << "Opened database successfully: " << C.dbname() << std::endl;
         } else {
-            cout << "Can't open database" << endl;
+            std::cout << "Can't open database" << std::endl;
             return 1;
         }
         /* Create a non-transactional object. */
@@ -213,7 +216,7 @@ namespace learning_lda {
 
         if (!request_exits){
             C.disconnect();
-            cout << "uncompleted request " << pk << " does not exist" << endl;
+            std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
             return 1;
         }
 
@@ -240,7 +243,7 @@ namespace learning_lda {
                 W.exec( sql );
                 W.commit();
                 C.disconnect ();
-                cout << "request " << pk << " is already completed" << endl;
+                std::cout << "request " << pk << " is already completed" << std::endl;
                 return 1;
             }
 
@@ -262,15 +265,11 @@ namespace learning_lda {
             for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
                 string word_dict = c2[0].as<string>();
                 istringstream ss(word_dict);
-                string word;
-                string count_str;
-                int count;
-                int document_total_count = 0;
-
                 if (index % pnum == myid) {
                     // This is a document that I need to store in local memory.
                     DocumentWordTopicsPB document;
                     string word;
+                    string count_str;
                     int count;
                     set<string> words_in_document;
                     while (ss >> word >> count_str) {  // Load and init a document.
@@ -289,6 +288,9 @@ namespace learning_lda {
                             continue;
                         }
 
+                        count_str.erase(count_str.size() - 1, 1);
+                        count = atoi(count_str.c_str());
+
                         vector<int32> topics;
                         for (int i = 0; i < count; ++i) {
                             topics.push_back(RandInt(num_topics));
@@ -304,8 +306,9 @@ namespace learning_lda {
                     // This is a document that should be stored by other processors. I just
                     // need to read the words and build the word set.
                     string word;
+                    string count_str;
                     int count;
-                    while (ss >> word >> count) {  // Only fill words into word_set
+                    while (ss >> word >> count_str) {  // Only fill words into word_set
                         if (word.at(0) == '{'){
                             word = word.substr(2, word.size() - 4);
                         }
@@ -320,12 +323,16 @@ namespace learning_lda {
                         if(!get_english && regex_match(word, alphabet)){
                             continue;
                         }
+                        count_str.erase(count_str.size() - 1, 1);
+                        count = atoi(count_str.c_str());
+
                         words->insert(word);
                     }
                 }
                 index++;
             }
         }
+        C.disconnect ();
         return corpus->size();
     }
 
