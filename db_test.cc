@@ -39,7 +39,18 @@ int main(int argc, char* argv[]) {
     int pk = 118;
     unsigned long pos;
     try {
-        connection C("dbname = lm_backend user = lm_admin password = 1qazxsw2 host = docker.for.mac.host.internal port = 5432");
+        string connection_str;
+        const char* django_setting = getenv("DJANGO_SETTINGS_MODULE");
+        if(django_setting == NULL){
+            connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 host =localhost port = 5432";
+        }
+        else if (strcmp(django_setting, "docker")){
+            connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 host = docker.for.mac.host.internal port = 5432";
+        }
+        else{
+            connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 host =localhost port = 5432";
+        }
+        connection C(connection_str);
         if (C.is_open()) {
             cout << "Opened database successfully: " << C.dbname() << endl;
         } else {

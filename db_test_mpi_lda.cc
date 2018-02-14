@@ -165,7 +165,7 @@ namespace learning_lda {
         pos = connection_str.find('?');
 
         if (django_setting == NULL){
-            connection_str.replace(pos, 1, "127.0.0.1");
+            connection_str.replace(pos, 1, "docker.for.mac.host.internal");
         }
         else if (strcmp(django_setting, "lm_backend.settings_stage")){
             connection_str.replace(pos, 1, "192.168.7.50");
@@ -182,9 +182,13 @@ namespace learning_lda {
 
         connection C(connection_str);
         if (C.is_open()) {
-            std::cout << "Opened database successfully: " << C.dbname() << std::endl;
+            if(myid == 0){
+                std::cout << "Opened database successfully: " << C.dbname() << std::endl;
+            }
         } else {
-            std::cout << "Can't open database" << std::endl;
+            if(myid == 0){
+                std::cout << "Can't open database" << std::endl;
+            }
             return 1;
         }
         /* Create a non-transactional object. */
@@ -219,7 +223,9 @@ namespace learning_lda {
 
         if (!request_exits){
             C.disconnect();
-            std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
+            if (myid == 0){
+                std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
+            }
             return 1;
         }
 
@@ -231,7 +237,7 @@ namespace learning_lda {
 
         /* Create a transactional object. */
 
-        if (false){
+        if (false && myid ==0){
 
 
             work W(C);
