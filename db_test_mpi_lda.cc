@@ -326,157 +326,158 @@ int main(int argc, char** argv) {
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
+    for(int k=0; k< 3; k++){
+        if (myid == 0){
+            /* Create a non-transactional object. */
+            nontransaction N(C);
+            pk = pks[k];
 
-    if (myid == 0){
-        /* Create a non-transactional object. */
-        nontransaction N(C);
-        pk = pks[0];
+            /* Create SQL statement */
+            sql = base_topic_req_sql;
+            pos = sql.find('?');
+            sql.replace(pos, 1, to_string(pk));
+            pos = sql.find('?');
+            sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
 
-        /* Create SQL statement */
-        sql = base_topic_req_sql;
-        pos = sql.find('?');
-        sql.replace(pos, 1, to_string(pk));
-        pos = sql.find('?');
-        sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
+            /* Execute SQL query */
+            result requests( N.exec( sql ));
 
-        /* Execute SQL query */
-        result requests( N.exec( sql ));
-
-        /* List down all the records */
-        for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
-            request_exits = true;
-            target_url_is_included = c[0].as<bool>();
-            if(!c[1].is_null()){
-                target_url = c[1].as<string>();
-            }
-            min_word_length = c[2].as<int>();
-            get_english = c[3].as<bool>();
-            break;
-        }
-
-        if (!request_exits){
-            if (myid == 0){
-                std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
-            }
-            //return 1;
-        }
-
-        sql = base_req_lda_data_sql;
-        pos = sql.find('?');
-        sql.replace(pos, 1, to_string(pk));
-        result lda_data( N.exec( sql ));
-        N.commit();
-
-        /* Create a transactional object. */
-
-        if (false){
-
-
-            work W(C);
-
-            /* if lda result exists, it means it is completed */
-            for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
-                /* Create  SQL UPDATE statement */
-                sql = base_req_update_sql;
-                pos = sql.find('?');
-                sql.replace(pos, 1, to_string(pk));
-                /* Execute SQL query */
-                W.exec( sql );
-                W.commit();
-                std::cout << "request " << pk << " is already completed" << std::endl;
-                // return 1;
+            /* List down all the records */
+            for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
+                request_exits = true;
+                target_url_is_included = c[0].as<bool>();
+                if(!c[1].is_null()){
+                    target_url = c[1].as<string>();
+                }
+                min_word_length = c[2].as<int>();
+                get_english = c[3].as<bool>();
+                break;
             }
 
-        }
-        num_val_buffer[0] = pk;
-        num_val_buffer[1] = min_word_length;
-        if(target_url_is_included){
-            num_val_buffer[2] = 1;
+            if (!request_exits){
+                if (myid == 0){
+                    std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
+                }
+                //return 1;
+            }
+
+            sql = base_req_lda_data_sql;
+            pos = sql.find('?');
+            sql.replace(pos, 1, to_string(pk));
+            result lda_data( N.exec( sql ));
+            N.commit();
+
+            /* Create a transactional object. */
+
+            if (false){
+
+
+                work W(C);
+
+                /* if lda result exists, it means it is completed */
+                for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
+                    /* Create  SQL UPDATE statement */
+                    sql = base_req_update_sql;
+                    pos = sql.find('?');
+                    sql.replace(pos, 1, to_string(pk));
+                    /* Execute SQL query */
+                    W.exec( sql );
+                    W.commit();
+                    std::cout << "request " << pk << " is already completed" << std::endl;
+                    // return 1;
+                }
+
+            }
+            num_val_buffer[0] = pk;
+            num_val_buffer[1] = min_word_length;
+            if(target_url_is_included){
+                num_val_buffer[2] = 1;
+            }
+            else{
+                num_val_buffer[2] = 0;
+            }
+            for (int process_id = 1; process_id < pnum; ++process_id){
+                MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
+
+                int copy_length = target_url.size();
+                if (copy_length > 2048)
+                    copy_length = 2048;
+                strncpy(url_buffer, target_url.c_str(), copy_length);
+                MPI_Send(target_url.c_str(), target_url.size(), MPI_CHAR, process_id, 1, MPI_COMM_WORLD);
+            }
+
         }
         else{
-            num_val_buffer[2] = 0;
-        }
-        for (int process_id = 1; process_id < pnum; ++process_id){
-            MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
+            MPI_Recv(num_val_buffer, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(url_buffer, 2048, MPI_CHAR, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            pk = num_val_buffer[0];
+            min_word_length = num_val_buffer[1];
+            if(num_val_buffer[2] == 0){
+                target_url_is_included = false;
+            }
+            else{
+                target_url_is_included = true;
+            }
 
-            int copy_length = target_url.size();
-            if (copy_length > 2048)
-                copy_length = 2048;
-            strncpy(url_buffer, target_url.c_str(), copy_length);
-            MPI_Send(target_url.c_str(), target_url.size(), MPI_CHAR, process_id, 1, MPI_COMM_WORLD);
-        }
-
-    }
-    else{
-        MPI_Recv(num_val_buffer, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(url_buffer, 2048, MPI_CHAR, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        pk = num_val_buffer[0];
-        min_word_length = num_val_buffer[1];
-        if(num_val_buffer[2] == 0){
-            target_url_is_included = false;
-        }
-        else{
-            target_url_is_included = true;
+            target_url = string(url_buffer);
         }
 
-        target_url = string(url_buffer);
-    }
+        srand(time(NULL));
 
-    srand(time(NULL));
+        LDACorpus corpus;
+        set<string> allwords;
+        CHECK_GT(DistributelyLoadAndInitTrainingCorpus(C, pk, target_url_is_included, target_url, min_word_length,
+                                                       get_english,
+                                                       flags.num_topics_,
+                                                       myid, pnum, &corpus, &allwords), 0);
+        std::cout << "Training data loaded" << std::endl;
+        // Make vocabulary words sorted and give each word an int index.
+        vector<string> sorted_words;
+        map<string, int> word_index_map;
+        for (set<string>::const_iterator iter = allwords.begin();
+             iter != allwords.end(); ++iter) {
+            sorted_words.push_back(*iter);
+        }
+        sort(sorted_words.begin(), sorted_words.end());
+        for (int i = 0; i < sorted_words.size(); ++i) {
+            word_index_map[sorted_words[i]] = i;
+        }
+        for (LDACorpus::iterator iter = corpus.begin(); iter != corpus.end();
+             ++iter) {
+            (*iter)->ResetWordIndex(word_index_map);
+        }
 
-    LDACorpus corpus;
-    set<string> allwords;
-    CHECK_GT(DistributelyLoadAndInitTrainingCorpus(C, pk, target_url_is_included, target_url, min_word_length,
-                                                   get_english,
-                                                   flags.num_topics_,
-                                                   myid, pnum, &corpus, &allwords), 0);
-    std::cout << "Training data loaded" << std::endl;
-    // Make vocabulary words sorted and give each word an int index.
-    vector<string> sorted_words;
-    map<string, int> word_index_map;
-    for (set<string>::const_iterator iter = allwords.begin();
-         iter != allwords.end(); ++iter) {
-        sorted_words.push_back(*iter);
-    }
-    sort(sorted_words.begin(), sorted_words.end());
-    for (int i = 0; i < sorted_words.size(); ++i) {
-        word_index_map[sorted_words[i]] = i;
-    }
-    for (LDACorpus::iterator iter = corpus.begin(); iter != corpus.end();
-         ++iter) {
-        (*iter)->ResetWordIndex(word_index_map);
-    }
-
-    for (int iter = 0; iter < flags.total_iterations_; ++iter) {
-        if (myid == 0) {
-            std::cout << "Iteration " << iter << " ...\n";
+        for (int iter = 0; iter < flags.total_iterations_; ++iter) {
+            if (myid == 0) {
+                std::cout << "Iteration " << iter << " ...\n";
+            }
+            ParallelLDAModel model(flags.num_topics_, word_index_map);
+            model.ComputeAndAllReduce(corpus);
+            LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
+            if (flags.compute_likelihood_ == "true") {
+                double loglikelihood_local = 0;
+                double loglikelihood_global = 0;
+                for (list<LDADocument*>::const_iterator iter = corpus.begin();
+                     iter != corpus.end();
+                     ++iter) {
+                    loglikelihood_local += sampler.LogLikelihood(*iter);
+                }
+                MPI_Allreduce(&loglikelihood_local, &loglikelihood_global, 1, MPI_DOUBLE,
+                              MPI_SUM, MPI_COMM_WORLD);
+                if (myid == 0) {
+                    std::cout << "Loglikelihood: " << loglikelihood_global << std::endl;
+                }
+            }
+            sampler.DoIteration(&corpus, true, false);
         }
         ParallelLDAModel model(flags.num_topics_, word_index_map);
         model.ComputeAndAllReduce(corpus);
-        LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
-        if (flags.compute_likelihood_ == "true") {
-            double loglikelihood_local = 0;
-            double loglikelihood_global = 0;
-            for (list<LDADocument*>::const_iterator iter = corpus.begin();
-                 iter != corpus.end();
-                 ++iter) {
-                loglikelihood_local += sampler.LogLikelihood(*iter);
-            }
-            MPI_Allreduce(&loglikelihood_local, &loglikelihood_global, 1, MPI_DOUBLE,
-                          MPI_SUM, MPI_COMM_WORLD);
-            if (myid == 0) {
-                std::cout << "Loglikelihood: " << loglikelihood_global << std::endl;
-            }
+        if (myid == 0) {
+            std::ofstream fout(flags.model_file_.c_str());
+            model.AppendAsString(fout);
         }
-        sampler.DoIteration(&corpus, true, false);
+        FreeCorpus(&corpus);
     }
-    ParallelLDAModel model(flags.num_topics_, word_index_map);
-    model.ComputeAndAllReduce(corpus);
-    if (myid == 0) {
-        std::ofstream fout(flags.model_file_.c_str());
-        model.AppendAsString(fout);
-    }
-    FreeCorpus(&corpus);
     C.disconnect();
     MPI_Finalize();
     return 0;
