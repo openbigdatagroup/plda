@@ -8,7 +8,7 @@ all: lda infer mpi_lda
 
 clean:
 	rm -rf $(OBJ_PATH)
-	rm -f lda mpi_lda infer
+	rm -f lda mpi_lda infer db_test
 
 OBJ_SRCS := cmd_flags.cc common.cc document.cc model.cc accumulative_model.cc sampler.cc
 ALL_OBJ = $(patsubst %.cc, %.o, $(OBJ_SRCS))
@@ -28,13 +28,13 @@ mpi_lda: mpi_lda.cc $(OBJ)
 	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@
 
 db_test: db_test.cc $(OBJ)
-	$(CC) $(CFLAGS) -lpqxx -lpq $(OBJ) $< -o $@
+	$(CC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
 
 db_test_lda: db_test_lda.cc $(OBJ)
-	$(CC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
+	$(CC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
 
 db_test_mpi_lda: db_test_mpi_lda.cc $(OBJ)
-	$(MPICC) $(CFLAGS) -lpqxx $(OBJ) $< -o $@
+	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
 
 mpi_lda2: mpi_lda2.cc $(OBJ)
 	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@
