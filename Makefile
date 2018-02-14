@@ -4,7 +4,7 @@ MPICC=mpicxx
 CFLAGS=-O3 -Wall -Wno-sign-compare
 OBJ_PATH = ./obj
 
-all: lda infer mpi_lda mpi_lda2 db_test
+all: lda infer mpi_lda
 
 clean:
 	rm -rf $(OBJ_PATH)
