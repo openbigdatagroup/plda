@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     int pk = 118;
     unsigned long pos;
     try {
-        connection C("dbname = lm_backend user = lm_admin password = 1qazxsw2 hostaddr = 127.0.0.1 port = 5432");
+        connection C("dbname = lm_backend user = lm_admin password = 1qazxsw2 host = docker.for.mac.host.internal port = 5432");
         if (C.is_open()) {
             cout << "Opened database successfully: " << C.dbname() << endl;
         } else {

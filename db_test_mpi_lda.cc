@@ -154,7 +154,7 @@ namespace learning_lda {
         string sql;
         unsigned long pos;
         regex alphabet(".*[a-z].*");
-        string const base_connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 hostaddr = ? "
+        string const base_connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 host = ? "
                 "port = 5432";
         string connection_str = base_connection_str;
 
@@ -172,6 +172,9 @@ namespace learning_lda {
         }
         else if (strcmp(django_setting, "lm_backend.settings_prod")){
             connection_str.replace(pos, 1, "192.168.7.19");
+        }
+        else if (strcmp(django_setting, "docker")){
+            connection_str.replace(pos, 1, "docker.for.mac.host.internal");
         }
         else{
             connection_str.replace(pos, 1, "127.0.0.1");
