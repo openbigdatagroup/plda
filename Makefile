@@ -8,7 +8,7 @@ all: lda infer mpi_lda
 
 clean:
 	rm -rf $(OBJ_PATH)
-	rm -f lda mpi_lda infer db_test
+	rm -f lda mpi_lda infer db_test db_test_mpi_lda
 
 OBJ_SRCS := cmd_flags.cc common.cc document.cc model.cc accumulative_model.cc sampler.cc
 ALL_OBJ = $(patsubst %.cc, %.o, $(OBJ_SRCS))

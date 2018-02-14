@@ -34,7 +34,8 @@
 #include <string>
 #include <pqxx/pqxx>
 #include <cstdlib>
-#include <regex>
+
+#include <regex.h>
 
 #include "common.h"
 #include "document.h"
@@ -59,8 +60,6 @@ using std::sort;
 using std::string;
 using learning_lda::LDADocument;
 
-using std::regex_match;
-using std::regex;
 
 using namespace pqxx;
 
@@ -153,7 +152,8 @@ namespace learning_lda {
         string const base_page_sql = "SELECT word_dict from topic_modeling_url_page_data where id = ?";
         string sql;
         unsigned long pos;
-        regex alphabet(".*[a-z].*");
+        regex_t reg;
+        regcomp(&reg, ".*[a-z].*", REG_NOSUB | REG_EXTENDED);
         string const base_connection_str = "dbname = lm_backend user = lm_admin password = 1qazxsw2 host = ? "
                 "port = 5432";
         string connection_str = base_connection_str;
@@ -193,9 +193,9 @@ namespace learning_lda {
         /* Create SQL statement */
         sql = base_topic_req_sql;
         pos = sql.find('?');
-        sql.replace(pos, 1, std::to_string(pk));
+        sql.replace(pos, 1, to_string(pk));
         pos = sql.find('?');
-        sql.replace(pos, 1, std::to_string(STATUS_LDA_ANALYSIS));
+        sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
 
         /* Execute SQL query */
         result requests( N.exec( sql ));
@@ -241,7 +241,7 @@ namespace learning_lda {
                 /* Create  SQL UPDATE statement */
                 sql = base_req_update_sql;
                 pos = sql.find('?');
-                sql.replace(pos, 1, std::to_string(pk));
+                sql.replace(pos, 1, to_string(pk));
                 /* Execute SQL query */
                 W.exec( sql );
                 W.commit();
@@ -254,7 +254,7 @@ namespace learning_lda {
 
         sql = base_page_topic_rel_sql;
         pos = sql.find('?');
-        sql.replace(pos, 1, std::to_string(pk));
+        sql.replace(pos, 1, to_string(pk));
         nontransaction N2(C);
         result page_topic_rel( N2.exec( sql ));
         string word_dict;
@@ -263,7 +263,7 @@ namespace learning_lda {
             int page_id = c[0].as<int>();
             sql = base_page_sql;
             pos = sql.find('?');
-            sql.replace(pos, 1, std::to_string(page_id));
+            sql.replace(pos, 1, to_string(page_id));
             result page_data(N2.exec(sql));
             for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
                 string word_dict = c2[0].as<string>();
@@ -287,7 +287,7 @@ namespace learning_lda {
                             continue;
                         }
 
-                        if(!get_english && regex_match(word, alphabet)){
+                        if(!get_english && regexec(&reg, word.c_str(), 0, NULL, 0) != REG_NOMATCH){
                             continue;
                         }
 
@@ -323,7 +323,7 @@ namespace learning_lda {
                             continue;
                         }
 
-                        if(!get_english && regex_match(word, alphabet)){
+                        if(!get_english && regexec(&reg, word.c_str(), 0, NULL, 0) != REG_NOMATCH){
                             continue;
                         }
                         count_str.erase(count_str.size() - 1, 1);

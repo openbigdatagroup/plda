@@ -8,3 +8,4 @@ cmake-build-debug
 CMakeLists.txt
 db_test
 db_test_lda
+db_test_mpi_lda
