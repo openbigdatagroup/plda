@@ -220,7 +220,6 @@ namespace learning_lda {
                     // need to read the words and build the word set.
                     string word;
                     string count_str;
-                    int count;
                     while (ss >> word >> count_str) {  // Only fill words into word_set
                         if (word.at(0) == '{'){
                             word = word.substr(2, word.size() - 4);
@@ -236,8 +235,6 @@ namespace learning_lda {
                         if(!get_english && regexec(&reg, word.c_str(), 0, NULL, 0) != REG_NOMATCH){
                             continue;
                         }
-                        count_str.erase(count_str.size() - 1, 1);
-                        count = atoi(count_str.c_str());
 
                         words->insert(word);
                     }
@@ -268,7 +265,7 @@ int main(int argc, char** argv) {
     using learning_lda::LDACmdLineFlags;
     int myid, pnum;
 
-    int pks[3] = {118, 117, 116};
+    int pks[3] = {118, 94, 117};
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url, min_word_length, get_english "
             "from topic_modeling_request where id = ?  and status = ?";
     string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
@@ -280,7 +277,7 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
 
     int pk;
-    bool request_exits = false;
+    bool request_exits;
     bool target_url_is_included;
     string target_url;
     int min_word_length;
@@ -297,15 +294,27 @@ int main(int argc, char** argv) {
 
     if (django_setting == NULL){
         connection_str.replace(pos, 1, "127.0.0.1");
+        if(myid == 0){
+            std::cout << "setting is localhost" << std::endl;
+        }
     }
-    else if (strcmp(django_setting, "lm_backend.settings_stage")){
+    else if (strcmp(django_setting, "lm_backend.settings_stage") == 0){
         connection_str.replace(pos, 1, "192.168.7.50");
+        if(myid == 0){
+            std::cout << "setting is stage" << std::endl;
+        }
     }
-    else if (strcmp(django_setting, "lm_backend.settings_prod")){
+    else if (strcmp(django_setting, "lm_backend.settings_prod") == 0){
         connection_str.replace(pos, 1, "192.168.7.19");
+        if(myid == 0){
+            std::cout << "setting is prod" << std::endl;
+        }
     }
-    else if (strcmp(django_setting, "docker")){
+    else if (strcmp(django_setting, "docker") == 0){
         connection_str.replace(pos, 1, "docker.for.mac.host.internal");
+        if(myid == 0){
+            std::cout << "setting is docker" << std::endl;
+        }
     }
     else{
         connection_str.replace(pos, 1, "127.0.0.1");
@@ -342,7 +351,7 @@ int main(int argc, char** argv) {
 
             /* Execute SQL query */
             result requests( N.exec( sql ));
-
+            request_exits = false;
             /* List down all the records */
             for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
                 request_exits = true;
@@ -359,7 +368,7 @@ int main(int argc, char** argv) {
                 if (myid == 0){
                     std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
                 }
-                //return 1;
+                continue;
             }
 
             sql = base_req_lda_data_sql;
@@ -385,7 +394,7 @@ int main(int argc, char** argv) {
                     W.exec( sql );
                     W.commit();
                     std::cout << "request " << pk << " is already completed" << std::endl;
-                    // return 1;
+                    continue;
                 }
 
             }
@@ -409,9 +418,13 @@ int main(int argc, char** argv) {
 
         }
         else{
+            k = 0;
             MPI_Recv(num_val_buffer, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            MPI_Recv(url_buffer, 2048, MPI_CHAR, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             pk = num_val_buffer[0];
+            /* if pk is 0 that means terminate the process */
+            if(pk == 0){
+                break;
+            }
             min_word_length = num_val_buffer[1];
             if(num_val_buffer[2] == 0){
                 target_url_is_included = false;
@@ -420,6 +433,7 @@ int main(int argc, char** argv) {
                 target_url_is_included = true;
             }
 
+            MPI_Recv(url_buffer, 2048, MPI_CHAR, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             target_url = string(url_buffer);
         }
 
@@ -480,6 +494,15 @@ int main(int argc, char** argv) {
         FreeCorpus(&corpus);
     }
     C.disconnect();
+
+    /* stop all other processes */
+    if(myid == 0){
+        for (int process_id = 1; process_id < pnum; ++process_id){
+            num_val_buffer[0] = 0;
+            MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
+        }
+    }
+
     MPI_Finalize();
     return 0;
 }
