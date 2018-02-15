@@ -420,7 +420,7 @@ int main(int argc, char** argv) {
             }
 
             for (int process_id = 1; process_id < pnum; ++process_id){
-                MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
+                MPI_Send(num_val_buffer, 4, MPI_INT, process_id, 0, MPI_COMM_WORLD);
 
                 int copy_length = target_url.size();
                 if (copy_length > 2048)
@@ -432,7 +432,7 @@ int main(int argc, char** argv) {
         }
         else{
             //k = 0;
-            MPI_Recv(num_val_buffer, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(num_val_buffer, 4, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             pk = num_val_buffer[0];
             /* if pk is 0 that means terminate the process */
             if(pk == 0){
