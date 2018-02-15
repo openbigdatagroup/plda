@@ -277,6 +277,8 @@ int main(int argc, char** argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
 
+    cpp_redis::client client;
+
     int pk;
     bool request_exits;
     bool target_url_is_included;
@@ -297,28 +299,36 @@ int main(int argc, char** argv) {
         connection_str.replace(pos, 1, "127.0.0.1");
         if(myid == 0){
             std::cout << "setting is localhost" << std::endl;
+            client.connect("127.0.0.1", 6379);
         }
     }
     else if (strcmp(django_setting, "lm_backend.settings_stage") == 0){
         connection_str.replace(pos, 1, "192.168.7.50");
         if(myid == 0){
             std::cout << "setting is stage" << std::endl;
+            client.connect("192.168.6.201", 6379);
         }
     }
     else if (strcmp(django_setting, "lm_backend.settings_prod") == 0){
         connection_str.replace(pos, 1, "192.168.7.19");
         if(myid == 0){
             std::cout << "setting is prod" << std::endl;
+            client.connect("192.168.6.205", 6379);
         }
     }
     else if (strcmp(django_setting, "docker") == 0){
         connection_str.replace(pos, 1, "docker.for.mac.host.internal");
         if(myid == 0){
             std::cout << "setting is docker" << std::endl;
+            client.connect("docker.for.mac.host.internal", 6379);
         }
     }
     else{
         connection_str.replace(pos, 1, "127.0.0.1");
+        if(myid == 0){
+            std::cout << "setting is null" << std::endl;
+            client.connect("127.0.0.1", 6379);
+        }
     }
     connection C(connection_str);
     if (C.is_open()) {
@@ -332,12 +342,13 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+
     LDACmdLineFlags flags;
     flags.ParseCmdFlags(argc, argv);
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
-    for(int k=0; k< 3; k++){
+    for(int k=0; k< 1; k++){
         if (myid == 0){
             /* Create a non-transactional object. */
             nontransaction N(C);
@@ -518,6 +529,7 @@ int main(int argc, char** argv) {
 
     /* stop all other processes */
     if(myid == 0){
+        client.disconnect();
         for (int process_id = 1; process_id < pnum; ++process_id){
             num_val_buffer[0] = 0;
             MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
