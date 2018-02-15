@@ -35,7 +35,7 @@
 
 #include <pqxx/pqxx>
 #include <cstdlib>
-#include <cpp_redis/cpp_redis>
+// #include <cpp_redis/cpp_redis>
 
 #include <regex.h>
 
@@ -336,7 +336,7 @@ int main(int argc, char** argv) {
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
-    for(int k=0; k< 3; k++){
+    for(int k=0; k< 1; k++){
         if (myid == 0){
             /* Create a non-transactional object. */
             nontransaction N(C);
@@ -418,7 +418,7 @@ int main(int argc, char** argv) {
 
         }
         else{
-            k = 0;
+            //k = 0;
             MPI_Recv(num_val_buffer, 3, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             pk = num_val_buffer[0];
             /* if pk is 0 that means terminate the process */
@@ -496,7 +496,7 @@ int main(int argc, char** argv) {
     C.disconnect();
 
     /* stop all other processes */
-    if(myid == 0){
+    if(myid == 0 && false){
         for (int process_id = 1; process_id < pnum; ++process_id){
             num_val_buffer[0] = 0;
             MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
