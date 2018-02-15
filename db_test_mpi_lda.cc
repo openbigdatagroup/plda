@@ -283,7 +283,7 @@ int main(int argc, char** argv) {
     int min_word_length;
     bool get_english;
 
-    int num_val_buffer[3];
+    int num_val_buffer[4];
     char url_buffer[2048];
 
     int pos;
@@ -406,6 +406,14 @@ int main(int argc, char** argv) {
             else{
                 num_val_buffer[2] = 0;
             }
+
+            if(get_english){
+                num_val_buffer[3] = 1;
+            }
+            else{
+                num_val_buffer[3] = 0;
+            }
+
             for (int process_id = 1; process_id < pnum; ++process_id){
                 MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
 
@@ -431,6 +439,13 @@ int main(int argc, char** argv) {
             }
             else{
                 target_url_is_included = true;
+            }
+
+            if(num_val_buffer[3] == 0){
+                get_english = false;
+            }
+            else{
+                get_english = true;
             }
 
             MPI_Recv(url_buffer, 2048, MPI_CHAR, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
