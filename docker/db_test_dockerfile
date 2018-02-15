@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     mpich \
     openssh-server \
-    postgresql postgresql-contrib libpqxx-4.0 libpq-dev libpqxx-dev
-    # postgresql postgresql-contrib libpq-dev libpqxx-dev git
+    postgresql postgresql-contrib libpqxx-4.0 libpq-dev libpqxx-dev \
+    git cmake
+
 
 RUN mkdir /var/run/sshd
 
@@ -26,11 +27,22 @@ RUN /usr/bin/ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 # add its ssh keys to authorized_keys
 RUN cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
 
+# this is for installing pqxx from the source code
 # RUN git clone https://github.com/jtv/libpqxx.git /root/libpqxx
 # WORKDIR /root/libpqxx
 # RUN ./configure --disable-documentation
 # RUN make install
+# WORKDIR /root
 
+# intall redis library
+RUN git clone https://github.com/Cylix/cpp_redis.git
+WORKDIR /root/cpp_redis
+RUN git submodule init && git submodule update
+RUN mkdir build
+WORKDIR /root/cpp_redis/build
+RUN cmake .. -DCMAKE_BUILD_TYPE=Release
+RUN make
+RUN make install
 
 RUN mkdir /root/plda
 

@@ -34,7 +34,7 @@ db_test_lda: db_test_lda.cc $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
 
 db_test_mpi_lda: db_test_mpi_lda.cc $(OBJ)
-	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
+	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq -lcpp_redis -ltacopie
 
 mpi_lda2: mpi_lda2.cc $(OBJ)
 	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@

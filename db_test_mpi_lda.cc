@@ -32,8 +32,10 @@
 #include <vector>
 #include <sstream>
 #include <string>
+
 #include <pqxx/pqxx>
 #include <cstdlib>
+#include <cpp_redis/cpp_redis>
 
 #include <regex.h>
 
@@ -272,7 +274,6 @@ int main(int argc, char** argv) {
     string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
     string const base_req_update_sql = "UPDATE topic_modeling_request set status = 6 where id = ?";
     string sql;
-
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
