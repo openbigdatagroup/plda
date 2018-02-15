@@ -242,6 +242,7 @@ namespace learning_lda {
                 index++;
             }
         }
+        N.commit();
         return corpus->size();
     }
 
@@ -336,7 +337,7 @@ int main(int argc, char** argv) {
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
-    for(int k=0; k< 1; k++){
+    for(int k=0; k< 3; k++){
         if (myid == 0){
             /* Create a non-transactional object. */
             nontransaction N(C);
@@ -380,9 +381,9 @@ int main(int argc, char** argv) {
             /* Create a transactional object. */
 
             if (false){
-
-
                 work W(C);
+
+                bool is_already_done = false;
 
                 /* if lda result exists, it means it is completed */
                 for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
@@ -392,10 +393,14 @@ int main(int argc, char** argv) {
                     sql.replace(pos, 1, to_string(pk));
                     /* Execute SQL query */
                     W.exec( sql );
-                    W.commit();
+                    is_already_done = true;
                     std::cout << "request " << pk << " is already completed" << std::endl;
-                    continue;
+                    break;
                 }
+                W.commit();
+
+                if (is_already_done)
+                    continue;
 
             }
             num_val_buffer[0] = pk;
@@ -482,7 +487,13 @@ int main(int argc, char** argv) {
                 std::cout << "Iteration " << iter << " ...\n";
             }
             ParallelLDAModel model(flags.num_topics_, word_index_map);
+            if (myid == 0) {
+                std::cout << "Iteration before model all reduce" << " ...\n";
+            }
             model.ComputeAndAllReduce(corpus);
+            if (myid == 0) {
+                std::cout << "Iteration  model all reduce" << " ...\n";
+            }
             LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
             if (flags.compute_likelihood_ == "true") {
                 double loglikelihood_local = 0;
@@ -492,6 +503,7 @@ int main(int argc, char** argv) {
                      ++iter) {
                     loglikelihood_local += sampler.LogLikelihood(*iter);
                 }
+
                 MPI_Allreduce(&loglikelihood_local, &loglikelihood_global, 1, MPI_DOUBLE,
                               MPI_SUM, MPI_COMM_WORLD);
                 if (myid == 0) {
