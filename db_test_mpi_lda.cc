@@ -35,7 +35,7 @@
 
 #include <pqxx/pqxx>
 #include <cstdlib>
-// #include <cpp_redis/cpp_redis>
+#include <cpp_redis/cpp_redis>
 
 #include <regex.h>
 
