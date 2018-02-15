@@ -2,7 +2,7 @@
 #
 # VERSION 0.1
 
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 
 # install mpich and ssh
 RUN apt-get update && apt-get install -y \
@@ -28,21 +28,12 @@ RUN /usr/bin/ssh-keygen -f /root/.ssh/id_rsa -t rsa -N ''
 RUN cp /root/.ssh/id_rsa.pub /root/.ssh/authorized_keys
 
 # this is for installing pqxx from the source code
-# RUN git clone https://github.com/jtv/libpqxx.git /root/libpqxx
-# WORKDIR /root/libpqxx
-# RUN ./configure --disable-documentation
-# RUN make install
+# RUN git clone https://github.com/jtv/libpqxx.git && cd libpqxx && ./configure --disable-documentation && make install
 # WORKDIR /root
 
 # intall redis library
-RUN git clone https://github.com/Cylix/cpp_redis.git
-WORKDIR /root/cpp_redis
-RUN git submodule init && git submodule update
-RUN mkdir build
-WORKDIR /root/cpp_redis/build
-RUN cmake .. -DCMAKE_BUILD_TYPE=Release
-RUN make
-RUN make install
+RUN git clone https://github.com/Cylix/cpp_redis.git && cd cpp_redis && git submodule init \
+    && git submodule update && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && make && make install
 
 RUN mkdir /root/plda
 
