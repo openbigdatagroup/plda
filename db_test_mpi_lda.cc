@@ -266,7 +266,7 @@ int main(int argc, char** argv) {
     using learning_lda::LDACmdLineFlags;
     int myid, pnum;
 
-    int pks[3] = {118, 94, 117};
+    int pks[3] = {118, 258, 117};
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url, min_word_length, get_english "
             "from topic_modeling_request where id = ?  and status = ?";
     string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
@@ -431,7 +431,7 @@ int main(int argc, char** argv) {
 
         }
         else{
-            //k = 0;
+            k = 0;
             MPI_Recv(num_val_buffer, 4, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
             pk = num_val_buffer[0];
             /* if pk is 0 that means terminate the process */
@@ -487,13 +487,7 @@ int main(int argc, char** argv) {
                 std::cout << "Iteration " << iter << " ...\n";
             }
             ParallelLDAModel model(flags.num_topics_, word_index_map);
-            if (myid == 0) {
-                std::cout << "Iteration before model all reduce" << " ...\n";
-            }
             model.ComputeAndAllReduce(corpus);
-            if (myid == 0) {
-                std::cout << "Iteration  model all reduce" << " ...\n";
-            }
             LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
             if (flags.compute_likelihood_ == "true") {
                 double loglikelihood_local = 0;
@@ -523,7 +517,7 @@ int main(int argc, char** argv) {
     C.disconnect();
 
     /* stop all other processes */
-    if(myid == 0 && false){
+    if(myid == 0){
         for (int process_id = 1; process_id < pnum; ++process_id){
             num_val_buffer[0] = 0;
             MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
