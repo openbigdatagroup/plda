@@ -36,6 +36,8 @@
 #include <pqxx/pqxx>
 #include <cstdlib>
 #include <cpp_redis/cpp_redis>
+#include <chrono>
+#include <thread>
 
 #include <regex.h>
 
@@ -50,6 +52,8 @@
 #define STATUS_LDA_ANALYSIS 6
 #define STATUS_COMPLETE  6
 
+#define LOCK_NAME "lda_analysis"
+#define LOCK_TIMEOUT 300
 
 using std::ifstream;
 using std::ofstream;
@@ -64,6 +68,7 @@ using learning_lda::LDADocument;
 
 
 using namespace pqxx;
+using namespace std::literals::chrono_literals;
 
 namespace learning_lda {
 
@@ -257,6 +262,23 @@ namespace learning_lda {
         }
     }
 }
+
+std::string random_string( size_t length )
+{
+    auto randchar = []() -> char
+    {
+        const char charset[] =
+                "0123456789"
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                        "abcdefghijklmnopqrstuvwxyz";
+        const size_t max_index = (sizeof(charset) - 1);
+        return charset[ rand() % max_index ];
+    };
+    std::string str(length,0);
+    std::generate_n( str.begin(), length, randchar );
+    return str;
+}
+
 int main(int argc, char** argv) {
     using learning_lda::LDACorpus;
     using learning_lda::LDAModel;
@@ -278,6 +300,8 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
 
     cpp_redis::client client;
+    vector<string> deleting_keys;
+    deleting_keys.push_back(LOCK_NAME);
 
     int pk;
     bool request_exits;
@@ -350,9 +374,36 @@ int main(int argc, char** argv) {
     }
     for(int k=0; k< 1; k++){
         if (myid == 0){
+
+            string token = random_string(16);
+            std::cout << "token: " <<token << std::endl;
+            // getting the lock
+            while(true){
+                auto locking_ret = client.setnx(LOCK_NAME, token);
+
+                client.commit();
+                if(locking_ret.get()){
+                    client.pexpire(LOCK_NAME, LOCK_TIMEOUT * 1000);
+                    break;
+                }
+                else
+                    std::this_thread::sleep_for(100s);
+            }
+
+            pk = pks[k];
+
+            auto locking_token_ret = client.get(LOCK_NAME);
+            client.commit();
+            string lock_token_str = locking_token_ret.get().as_string();
+            std::cout<< "acutal token" << lock_token_str << std::endl;
+            if (lock_token_str == token){
+
+                client.del(deleting_keys);
+                client.commit();
+            }
+
             /* Create a non-transactional object. */
             nontransaction N(C);
-            pk = pks[k];
 
             /* Create SQL statement */
             sql = base_topic_req_sql;
