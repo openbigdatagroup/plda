@@ -281,6 +281,36 @@ std::string random_string( size_t length )
     return str;
 }
 
+void lda_redis_lock(cpp_redis::client& client, const string& token){
+    while(true){
+        auto locking_ret = client.setnx(LOCK_NAME, token);
+        client.commit();
+        if(locking_ret.get()){
+            client.pexpire(LOCK_NAME, LOCK_TIMEOUT * 1000);
+            break;
+        }
+        else
+            std::this_thread::sleep_for(5s);
+    }
+}
+
+void lda_redis_unlock(cpp_redis::client& client, const string& token){
+    vector<string> deleting_keys;
+    deleting_keys.push_back(LOCK_NAME);
+
+    auto lock_token_get = client.get(LOCK_NAME);
+    client.commit();
+    auto lock_token_get_reply = lock_token_get.get();
+    if(!lock_token_get_reply.is_null()){
+        string lock_token_str = lock_token_get_reply.as_string();
+        std::cout<< "acutal token" << lock_token_str << std::endl;
+        if (lock_token_str == token){
+            client.del(deleting_keys);
+            client.commit();
+        }
+    }
+}
+
 int main(int argc, char** argv) {
     using learning_lda::LDACorpus;
     using learning_lda::LDAModel;
@@ -290,7 +320,7 @@ int main(int argc, char** argv) {
     using learning_lda::LDACmdLineFlags;
     int myid, pnum;
 
-    int pks[3] = {118, 258, 117};
+    //int pks[3] = {118, 258, 117};
     string const base_topic_req_sql = "SELECT target_url_is_included, target_url, min_word_length, get_english "
             "from topic_modeling_request where id = ?  and status = ?";
     string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
@@ -302,11 +332,9 @@ int main(int argc, char** argv) {
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
 
     cpp_redis::client client;
-    vector<string> deleting_keys;
-    deleting_keys.push_back(LOCK_NAME);
 
     char char_hostname[64];
-    gethostname(char_hostname);
+    gethostname(char_hostname, 64);
     string hostname(char_hostname);
 
     vector<string> deleting_hash_keys;
@@ -333,6 +361,8 @@ int main(int argc, char** argv) {
         if(myid == 0){
             std::cout << "setting is localhost" << std::endl;
             client.connect("127.0.0.1", 6379);
+            client.select(1);
+            client.commit();
         }
     }
     else if (strcmp(django_setting, "lm_backend.settings_stage") == 0){
@@ -340,6 +370,8 @@ int main(int argc, char** argv) {
         if(myid == 0){
             std::cout << "setting is stage" << std::endl;
             client.connect("192.168.6.201", 6379);
+            client.select(1);
+            client.commit();
         }
     }
     else if (strcmp(django_setting, "lm_backend.settings_prod") == 0){
@@ -347,6 +379,8 @@ int main(int argc, char** argv) {
         if(myid == 0){
             std::cout << "setting is prod" << std::endl;
             client.connect("192.168.6.205", 6379);
+            client.select(1);
+            client.commit();
         }
     }
     else if (strcmp(django_setting, "docker") == 0){
@@ -354,6 +388,8 @@ int main(int argc, char** argv) {
         if(myid == 0){
             std::cout << "setting is docker" << std::endl;
             client.connect("docker.for.mac.host.internal", 6379);
+            client.select(1);
+            client.commit();
         }
     }
     else{
@@ -361,6 +397,8 @@ int main(int argc, char** argv) {
         if(myid == 0){
             std::cout << "setting is null" << std::endl;
             client.connect("127.0.0.1", 6379);
+            client.select(1);
+            client.commit();
         }
     }
     connection C(connection_str);
@@ -381,42 +419,37 @@ int main(int argc, char** argv) {
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
-    for(int k=0; k< 1; k++){
+    for(int k=0; k< 3; k++){
+        string token;
         if (myid == 0){
-
-            string token = random_string(16);
+            token = random_string(16);
             std::cout << "token: " <<token << std::endl;
-            // getting the lock
-            while(true){
-                auto locking_ret = client.setnx(LOCK_NAME, token);
 
-                client.commit();
-                if(locking_ret.get()){
-                    client.pexpire(LOCK_NAME, LOCK_TIMEOUT * 1000);
-                    break;
-                }
-                else
-                    std::this_thread::sleep_for(5s);
-            }
+            lda_redis_lock(client, token);
 
-            auto pk_ret = client.hget(REDIS_LDA_HASH_NAME, hostname);
+            std::cout<< "hostname: " << hostname << std::endl;
+            auto get_pk = client.hget(REDIS_LDA_HASH_NAME, hostname);
             client.commit();
-            pk = pk_ret.get().as_integer();
+            auto pk_get_reply = get_pk.get();
+            std::cout<< "pk null: " << pk_get_reply.is_null() << std::endl;
+            std::cout<< "pk array: " << pk_get_reply.is_array() << std::endl;
+            std::cout<< "pk string: " << pk_get_reply.is_string() << std::endl;
+            std::cout<< "pk error: " << pk_get_reply.is_error() << std::endl;
+            std::cout<< "pk simple string: " << pk_get_reply.is_simple_string() << std::endl;
+            std::cout<< "pk bulk string: " << pk_get_reply.is_bulk_string() << std::endl;
 
-            auto locking_token_ret = client.get(LOCK_NAME);
-            client.commit();
-            string lock_token_str = locking_token_ret.get().as_string();
-            std::cout<< "acutal token" << lock_token_str << std::endl;
-            if (lock_token_str == token){
+            lda_redis_unlock(client, token);
 
-                client.del(deleting_keys);
-                client.commit();
-            }
-
-            if(pk==0){
-                std::this_thread::sleep_for(90s);
+            if(pk_get_reply.is_null()){
+                std::this_thread::sleep_for(30s);
                 continue;
             }
+            else{
+                string pk_str = pk_get_reply.as_string();
+                pk = atoi(pk_str.c_str());
+            }
+
+            std::cout<< "pk val: " << pk << std::endl;
 
             /* Create a non-transactional object. */
             nontransaction N(C);
@@ -478,8 +511,11 @@ int main(int argc, char** argv) {
                 W.commit();
 
                 if (is_already_done)
+                    lda_redis_lock(client, token);
+                    client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
+                    client.commit();
+                    lda_redis_unlock(client, token);
                     continue;
-
             }
             num_val_buffer[0] = pk;
             num_val_buffer[1] = min_word_length;
@@ -592,35 +628,12 @@ int main(int argc, char** argv) {
         }
         FreeCorpus(&corpus);
 
-        while(true){
-            auto locking_ret2 = client.setnx(LOCK_NAME, token);
-
+        if (myid == 0){
+            lda_redis_lock(client, token);
+            client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
             client.commit();
-            if(locking_ret2.get()){
-                client.pexpire(LOCK_NAME, LOCK_TIMEOUT * 1000);
-                break;
-            }
-            else
-                std::this_thread::sleep_for(5s);
-        }
+            lda_redis_unlock(client, token);
 
-
-        client.hdel(REDIS_LDA_HASH_NAME, hostname, deleting_hash_keys);
-        client.commit();
-
-        auto locking_token_ret2 = client.get(LOCK_NAME);
-        client.commit();
-        string lock_token_str = locking_token_ret2.get().as_string();
-        std::cout<< "acutal token" << lock_token_str << std::endl;
-        if (lock_token_str == token){
-
-            client.del(deleting_keys);
-            client.commit();
-        }
-
-        if(pk==0){
-            std::this_thread::sleep_for(90s);
-            continue;
         }
 
     }
