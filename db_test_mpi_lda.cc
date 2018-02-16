@@ -311,6 +311,107 @@ void lda_redis_unlock(cpp_redis::client& client, const string& token){
     }
 }
 
+void save_to_lm(int pk, map<string, int> &word_index_map, ParallelLDAModel &model, connection& c){
+    string const base_page_topic_rel_sql = "SELECT pagedata_id from topic_modeling_url_page_data_topic_request "
+            "where topicmodelingrequest_id = ?";
+
+    vector<string> index_word_map(word_index_map_.size());
+    for (map<string, int>::const_iterator iter = word_index_map_.begin();
+         iter != word_index_map_.end(); ++iter) {
+        index_word_map[iter->second] = iter->first;
+    }
+    int64 topic_array[model.num_topics()][word_index_map_.size()];
+
+    for (LDAModel::Iterator iter(model); !iter.Done(); iter.Next()) {
+        for (int topic = 0; topic < num_topics(); ++topic) {
+            topic_array[topic][iter.Word()] = iter.Distribution()[topic];
+        }
+    }
+
+    LDASampler sampler(flags.alpha_, flags.beta_, &model, NULL);
+
+    sql = base_page_topic_rel_sql;
+    pos = sql.find('?');
+    sql.replace(pos, 1, to_string(pk));
+    nontransaction N(C);
+    result page_topic_rel( N.exec( sql ));
+    string word_dict;
+
+    int num_pages = page_topic_rel.size();
+
+    int page_order[num_pages];
+    float page_topics[num_pages][model.num_topics()];
+
+    int page_order_index = 0;
+    for (result::const_iterator c = page_topic_rel.begin(); c != page_topic_rel.end(); ++c) {
+        int page_id = c[0].as<int>();
+        page_order[page_order_index] = page_id;
+        sql = base_page_sql;
+        pos = sql.find('?');
+        sql.replace(pos, 1, to_string(page_id));
+        result page_data(N.exec(sql));
+        for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
+            string word_dict = c2[0].as<string>();
+            istringstream ss(word_dict);
+
+            // This is a document that I need to store in local memory.
+            DocumentWordTopicsPB document;
+            string word;
+            string count_str;
+            int count;
+            set<string> words_in_document;
+            while (ss >> word >> count_str) {  // Load and init a document.
+                if (word.at(0) == '{'){
+                    word = word.substr(2, word.size() - 4);
+                }
+                else{
+                    word = word.substr(1, word.size() - 3);
+                }
+
+                if(utf8_strlen(word) < min_word_length){
+                    continue;
+                }
+
+                if(!get_english && regexec(&reg, word.c_str(), 0, NULL, 0) != REG_NOMATCH){
+                    continue;
+                }
+
+                count_str.erase(count_str.size() - 1, 1);
+                count = atoi(count_str.c_str());
+
+                vector<int32> topics;
+                for (int i = 0; i < count; ++i) {
+                    topics.push_back(RandInt(num_topics));
+                }
+                map<string, int>::const_iterator iter = word_index_map.find(word);
+                if (iter != word_index_map.end()) {
+                    document_topics.add_wordtopics(word, iter->second, topics);
+                }
+            }
+            LDADocument document(document_topics, model.num_topics());
+            TopicProbDistribution prob_dist(model.num_topics(), 0);
+            for (int iter = 0; iter < 45; ++iter) {
+                sampler.SampleNewTopicsForDocument(&document, false);
+                if (iter >= 35) {
+                    const vector<int64>& document_distribution =
+                            document.topic_distribution();
+                    for (int i = 0; i < document_distribution.size(); ++i) {
+                        prob_dist[i] += document_distribution[i];
+                    }
+                }
+            }
+            for (int topic = 0; topic < prob_dist.size(); ++topic) {
+                page_topics[page_order_index][topic] = prob_dist[topic] / 10;
+            }
+
+        }
+        page_order_index++;
+    }
+    N.commit();
+
+    
+}
+
 int main(int argc, char** argv) {
     using learning_lda::LDACorpus;
     using learning_lda::LDAModel;
@@ -612,9 +713,12 @@ int main(int argc, char** argv) {
         }
         ParallelLDAModel model(flags.num_topics_, word_index_map);
         model.ComputeAndAllReduce(corpus);
+
+
         if (myid == 0) {
             std::ofstream fout(flags.model_file_.c_str());
             model.AppendAsString(fout);
+
         }
         FreeCorpus(&corpus);
 
