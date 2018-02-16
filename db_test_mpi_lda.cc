@@ -158,9 +158,9 @@ namespace learning_lda {
             int num_topics,
             int myid, int pnum, LDACorpus* corpus, set<string>* words) {
 
-        string const base_page_topic_rel_sql = "SELECT pagedata_id from topic_modeling_url_page_data_topic_request "
-                "where topicmodelingrequest_id = ?";
-        string const base_page_sql = "SELECT word_dict from topic_modeling_url_page_data where id = ?";
+        string const base_page_topic_rel_sql = "SELECT pagedata_id, id from topic_modeling_url_page_data_topic_request "
+                "where topicmodelingrequest_id = ? ORDER BY id ";
+        string const base_page_sql = "SELECT word_dict, id from topic_modeling_url_page_data where id = ?";
         string sql;
         unsigned long pos;
         regex_t reg;
@@ -272,15 +272,16 @@ namespace learning_lda {
                     map<string, int> &word_index_map, LDAModel &model, connection& conn){
         string const base_page_topic_rel_sql = "SELECT pagedata_id from topic_modeling_url_page_data_topic_request "
                 "where topicmodelingrequest_id = ?";
-        string const base_page_sql = "SELECT word_dict from topic_modeling_url_page_data where id = ?";
+        string const base_page_sql = "SELECT word_dict, page_url from topic_modeling_url_page_data where id = ?";
 
         vector<string> index_word_map(word_index_map.size());
         for (map<string, int>::const_iterator iter = word_index_map.begin();
              iter != word_index_map.end(); ++iter) {
             index_word_map[iter->second] = iter->first;
         }
+        int num_words = word_index_map.size();
         int num_topics = model.num_topics();
-        int64 topic_array[num_topics][word_index_map.size()];
+        int64 topic_array[num_topics][num_words];
 
         for (LDAModel::Iterator iter(&model); !iter.Done(); iter.Next()) {
             for (int topic = 0; topic < num_topics; ++topic) {
@@ -302,6 +303,7 @@ namespace learning_lda {
         int num_pages = page_topic_rel.size();
 
         int page_order[num_pages];
+        vector<string> page_urls(num_pages);
         double page_topics[num_pages][model.num_topics()];
 
         int page_order_index = 0;
@@ -315,6 +317,9 @@ namespace learning_lda {
             for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
                 string word_dict = c2[0].as<string>();
                 istringstream ss(word_dict);
+
+                string page_url = c[1].as<string>();
+                page_urls[page_order_index] = page_url;
 
                 // This is a document that I need to store in local memory.
                 string word;
@@ -375,6 +380,35 @@ namespace learning_lda {
         std::cout << page_topics[32][1] << std::endl;
         std::cout << page_topics[32][1] << std::endl;
         std::cout << topic_array[1][1] << std::endl;
+
+        std::ostringstream json;
+        json << "{ \"topics\":[";
+
+        for(int i=0; i < num_topics; i++){
+            json << " [";
+            for(int j=0; j < num_words; j++){
+                json << topic_array[i][j];
+                if (j + 1 < num_words)
+                    json << ", ";
+            }
+            json << "]";
+            if(i + 1 < num_topics)
+                json << ", ";
+        }
+        json << "], \"page_topic_distribution\":[";
+
+        for(int i=0; i < num_pages; i++){
+            json << " [";
+            for(int j=0; j < num_topics; j++){
+                json << page_topics[i][j];
+                if (j + 1 < num_topics)
+                    json << ", ";
+            }
+            json << "]";
+            if(i + 1 < num_pages)
+                json << ", ";
+        }
+        json << "], \"word_order\":[";
 
     }
 }
