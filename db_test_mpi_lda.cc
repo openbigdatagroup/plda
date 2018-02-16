@@ -38,6 +38,7 @@
 #include <cpp_redis/cpp_redis>
 #include <chrono>
 #include <thread>
+#include <unistd.h>
 
 #include <regex.h>
 
@@ -54,6 +55,7 @@
 
 #define LOCK_NAME "lda_analysis"
 #define LOCK_TIMEOUT 300
+#define REDIS_LDA_HASH_NAME "lda_workers"
 
 using std::ifstream;
 using std::ofstream;
@@ -303,6 +305,13 @@ int main(int argc, char** argv) {
     vector<string> deleting_keys;
     deleting_keys.push_back(LOCK_NAME);
 
+    char char_hostname[64];
+    gethostname(char_hostname);
+    string hostname(char_hostname);
+
+    vector<string> deleting_hash_keys;
+    deleting_hash_keys.push_back(hostname);
+
     int pk;
     bool request_exits;
     bool target_url_is_included;
@@ -387,10 +396,12 @@ int main(int argc, char** argv) {
                     break;
                 }
                 else
-                    std::this_thread::sleep_for(100s);
+                    std::this_thread::sleep_for(5s);
             }
 
-            pk = pks[k];
+            auto pk_ret = client.hget(REDIS_LDA_HASH_NAME, hostname);
+            client.commit();
+            pk = pk_ret.get().as_integer();
 
             auto locking_token_ret = client.get(LOCK_NAME);
             client.commit();
@@ -400,6 +411,11 @@ int main(int argc, char** argv) {
 
                 client.del(deleting_keys);
                 client.commit();
+            }
+
+            if(pk==0){
+                std::this_thread::sleep_for(90s);
+                continue;
             }
 
             /* Create a non-transactional object. */
@@ -575,6 +591,38 @@ int main(int argc, char** argv) {
             model.AppendAsString(fout);
         }
         FreeCorpus(&corpus);
+
+        while(true){
+            auto locking_ret2 = client.setnx(LOCK_NAME, token);
+
+            client.commit();
+            if(locking_ret2.get()){
+                client.pexpire(LOCK_NAME, LOCK_TIMEOUT * 1000);
+                break;
+            }
+            else
+                std::this_thread::sleep_for(5s);
+        }
+
+
+        client.hdel(REDIS_LDA_HASH_NAME, hostname, deleting_hash_keys);
+        client.commit();
+
+        auto locking_token_ret2 = client.get(LOCK_NAME);
+        client.commit();
+        string lock_token_str = locking_token_ret2.get().as_string();
+        std::cout<< "acutal token" << lock_token_str << std::endl;
+        if (lock_token_str == token){
+
+            client.del(deleting_keys);
+            client.commit();
+        }
+
+        if(pk==0){
+            std::this_thread::sleep_for(90s);
+            continue;
+        }
+
     }
     C.disconnect();
 
