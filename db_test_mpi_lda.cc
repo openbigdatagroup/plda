@@ -419,26 +419,16 @@ int main(int argc, char** argv) {
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
-    for(int k=0; k< 3; k++){
+    for(int k=0; k< 6; k++){
         string token;
         if (myid == 0){
             token = random_string(16);
-            std::cout << "token: " <<token << std::endl;
-
             lda_redis_lock(client, token);
-
-            std::cout<< "hostname: " << hostname << std::endl;
             auto get_pk = client.hget(REDIS_LDA_HASH_NAME, hostname);
             client.commit();
-            auto pk_get_reply = get_pk.get();
-            std::cout<< "pk null: " << pk_get_reply.is_null() << std::endl;
-            std::cout<< "pk array: " << pk_get_reply.is_array() << std::endl;
-            std::cout<< "pk string: " << pk_get_reply.is_string() << std::endl;
-            std::cout<< "pk error: " << pk_get_reply.is_error() << std::endl;
-            std::cout<< "pk simple string: " << pk_get_reply.is_simple_string() << std::endl;
-            std::cout<< "pk bulk string: " << pk_get_reply.is_bulk_string() << std::endl;
-
             lda_redis_unlock(client, token);
+
+            auto pk_get_reply = get_pk.get();
 
             if(pk_get_reply.is_null()){
                 std::this_thread::sleep_for(30s);
@@ -449,7 +439,7 @@ int main(int argc, char** argv) {
                 pk = atoi(pk_str.c_str());
             }
 
-            std::cout<< "pk val: " << pk << std::endl;
+            std::cout<< "request received pk: " << pk << std::endl;
 
             /* Create a non-transactional object. */
             nontransaction N(C);
@@ -633,7 +623,8 @@ int main(int argc, char** argv) {
             client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
             client.commit();
             lda_redis_unlock(client, token);
-
+            std::cout<< "request " << pk << " is finished" << std::endl;
+            std::cout << "waiting for another request" << std::endl;
         }
 
     }
