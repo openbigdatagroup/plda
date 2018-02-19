@@ -321,7 +321,7 @@ namespace learning_lda {
                 string word_dict = c2[0].as<string>();
                 istringstream ss(word_dict);
 
-                string page_url = c[1].as<string>();
+                string page_url = c2[1].as<string>();
                 page_urls[page_order_index] = page_url;
 
                 // This is a document that I need to store in local memory.
