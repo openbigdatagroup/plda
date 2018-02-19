@@ -274,6 +274,9 @@ namespace learning_lda {
                 "where topicmodelingrequest_id = ?";
         string const base_page_sql = "SELECT word_dict, page_url from topic_modeling_url_page_data where id = ?";
 
+        string const base_result_creation = "INSERT INTO topic_modeling_lda_data (topic_request, result) "
+                "VALUES (?, ?)";
+
         vector<string> index_word_map(word_index_map.size());
         for (map<string, int>::const_iterator iter = word_index_map.begin();
              iter != word_index_map.end(); ++iter) {
@@ -375,14 +378,8 @@ namespace learning_lda {
         }
         N.commit();
 
-        std::cout << "data parsing successful" << std::endl;
-        std::cout << index_word_map[300] << std::endl;
-        std::cout << page_topics[32][1] << std::endl;
-        std::cout << page_topics[32][1] << std::endl;
-        std::cout << topic_array[1][1] << std::endl;
-
         std::ostringstream json;
-        json << "{ \"topics\":[";
+        json << "'{ \"topics\": [";
 
         for(int i=0; i < num_topics; i++){
             json << " [";
@@ -395,20 +392,20 @@ namespace learning_lda {
             if(i + 1 < num_topics)
                 json << ", ";
         }
-        json << "], \"page_topic_distribution\":[";
+        json << " ], \"page_topic_distribution\": [";
 
         for(int i=0; i < num_pages; i++){
-            json << " [";
+            json << " [ ";
             for(int j=0; j < num_topics; j++){
                 json << page_topics[i][j];
                 if (j + 1 < num_topics)
                     json << ", ";
             }
-            json << "]";
+            json << " ]";
             if(i + 1 < num_pages)
                 json << ", ";
         }
-        json << "], \"word_order\":[";
+        json << " ], \"word_order\": [";
 
         for(int i=0; i < num_words; i++){
             json << "\"" << index_word_map[i] << "\"";
@@ -416,7 +413,7 @@ namespace learning_lda {
                 json << ", ";
         }
 
-        json << "], \"page_order\":[";
+        json << " ], \"page_order\": [";
 
         for(int i=0; i < num_pages; i++){
             json << "(" << "\"" << page_urls[i] << "\", " << page_order[i] << ")";
@@ -424,7 +421,17 @@ namespace learning_lda {
                 json << ", ";
         }
 
-        json << "]";
+        json << "] }'";
+
+        sql = base_result_creation;
+        pos = sql.find('?');
+        sql.replace(pos, 1, to_string(pk));
+        pos = sql.find('?');
+        sql.replace(pos, 1, json.str());
+
+        work W(C);
+        W.exec(sql);
+        W.commit();
 
     }
 }
