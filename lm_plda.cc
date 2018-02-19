@@ -396,7 +396,7 @@ namespace learning_lda {
             if(i + 1 < num_topics)
                 json << ", ";
         }
-        
+
         json << " ], \"page_topic_distribution\": [";
 
         for(int i=0; i < num_pages; i++){

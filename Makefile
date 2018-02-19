@@ -4,11 +4,11 @@ MPICC=mpicxx
 CFLAGS=-O3 -Wall -Wno-sign-compare
 OBJ_PATH = ./obj
 
-all: lda infer mpi_lda
+all: lda infer mpi_lda lm_plda
 
 clean:
 	rm -rf $(OBJ_PATH)
-	rm -f lda mpi_lda infer db_test db_test_mpi_lda
+	rm -f lda mpi_lda infer db_test lm_plda
 
 OBJ_SRCS := cmd_flags.cc common.cc document.cc model.cc accumulative_model.cc sampler.cc
 ALL_OBJ = $(patsubst %.cc, %.o, $(OBJ_SRCS))
@@ -33,8 +33,5 @@ db_test: db_test.cc $(OBJ)
 db_test_lda: db_test_lda.cc $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
 
-db_test_mpi_lda: db_test_mpi_lda.cc $(OBJ)
+lm_plda: lm_plda.cc $(OBJ)
 	$(MPICC) $(CFLAGS) -std=c++14 $(OBJ) $< -o $@ -lpqxx -lpq  -ltacopie -lcpp_redis -lpthread
-
-mpi_lda2: mpi_lda2.cc $(OBJ)
-	$(MPICC) $(CFLAGS) $(OBJ) $< -o $@

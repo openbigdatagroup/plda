@@ -20,7 +20,7 @@ for((i=2; i<=$NODE_NUM; i++)); do
 done
 
 echo "Building..."
-docker exec plda-master bash -c "cd /root/plda && make clean && make db_test_mpi_lda"
+docker exec plda-master bash -c "cd /root/plda && make clean && make lm_plda"
 
 echo "Training..."
 docker exec plda-master bash -c "time mpiexec -f ./docker/hosts -n $NODE_NUM ./db_test_mpi_lda --pk 118 --num_topics 8 --alpha 0.1 --beta 0.01 --training_data_file testdata/test_data.txt --model_file testdata/lda_model.txt --total_iterations 150"
