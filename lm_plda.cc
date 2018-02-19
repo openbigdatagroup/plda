@@ -633,15 +633,12 @@ int main(int argc, char** argv) {
 
             /* Create SQL statement */
             request_sql = base_topic_req_sql;
-            pos = sql.find('?');
-            std::cout<< "what is wrong " << request_sql << std::endl;
+            pos = request_sql.find('?');
             request_sql.replace(pos, 1, to_string(pk));
-            std::cout<< "what is wrong " << request_sql << std::endl;
-            pos = sql.find('?');
+            pos = request_sql.find('?');
             request_sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
-            std::cout<< "what is wrong " << request_sql << std::endl;
             /* Execute SQL query */
-            result requests( N.exec( sql ));
+            result requests( N.exec( request_sql ));
             request_exits = false;
             /* List down all the records */
             for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
@@ -828,11 +825,13 @@ int main(int argc, char** argv) {
                     }
 
                     for (int process_id = 1; process_id < pnum; ++process_id){
+                        std::cout << "send request status " << process_id << " ...\n";
                         MPI_Send(&request_is_alive, 1, MPI_CXX_BOOL, process_id, 19, MPI_COMM_WORLD);
                     }
 
                 }
-                else{
+                else if(myid != 0 && iter % 300 == 0){
+                    std::cout << "receive request status " << myid << " ...\n";
                     MPI_Recv(&request_is_alive, 1, MPI_CXX_BOOL, 0, 19, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 }
 
