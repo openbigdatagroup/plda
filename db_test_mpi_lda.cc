@@ -274,8 +274,8 @@ namespace learning_lda {
                 "where topicmodelingrequest_id = ?";
         string const base_page_sql = "SELECT word_dict, page_url from topic_modeling_url_page_data where id = ?";
 
-        string const base_result_creation = "INSERT INTO topic_modeling_lda_data (topic_request, result) "
-                "VALUES (?, ?)";
+        string const base_result_creation = "INSERT INTO topic_modeling_lda_data (topic_request_id, result, "
+                "created_at) VALUES (?, ?, CURRENT_TIMESTAMP)";
 
         vector<string> index_word_map(word_index_map.size());
         for (map<string, int>::const_iterator iter = word_index_map.begin();
@@ -396,6 +396,7 @@ namespace learning_lda {
         }
         std::cout << "topic done" << std::endl;
 
+
         json << " ], \"page_topic_distribution\": [";
 
         for(int i=0; i < num_pages; i++){
@@ -410,19 +411,22 @@ namespace learning_lda {
                 json << ", ";
         }
         std::cout << "page topic done" << std::endl;
+
+
         json << " ], \"word_order\": [";
 
         for(int i=0; i < num_words; i++){
             json << "\"" << index_word_map[i] << "\"";
-            if (i + 1 < num_topics)
+            if (i + 1 < num_words)
                 json << ", ";
         }
+
         std::cout << "word order done" << std::endl;
         json << " ], \"page_order\": [";
 
         for(int i=0; i < num_pages; i++){
-            json << "(" << "\"" << page_urls[i] << "\", " << page_order[i] << ")";
-            if (i + 1 < num_topics)
+            json << "[" << "\"" << page_urls[i] << "\", " << page_order[i] << "]";
+            if (i + 1 < num_pages)
                 json << ", ";
         }
 
@@ -597,7 +601,7 @@ int main(int argc, char** argv) {
     if (!flags.CheckParallelTrainingValidity()) {
         return -1;
     }
-    for(int k=0; k< 6; k++){
+    for(int k=0; k < 2; k++){
         string token;
         if (myid == 0){
             token = random_string(16);
