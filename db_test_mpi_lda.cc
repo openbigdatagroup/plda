@@ -285,6 +285,7 @@ namespace learning_lda {
         int num_words = word_index_map.size();
         int num_topics = model.num_topics();
         int64 topic_array[num_topics][num_words];
+        int word_doc_count[num_words];
 
         for (LDAModel::Iterator iter(&model); !iter.Done(); iter.Next()) {
             for (int topic = 0; topic < num_topics; ++topic) {
@@ -355,6 +356,7 @@ namespace learning_lda {
                     map<string, int>::const_iterator iter = word_index_map.find(word);
                     if (iter != word_index_map.end()) {
                         document_topics.add_wordtopics(word, iter->second, topics);
+                        word_doc_count[iter->second] += 1;
                     }
                 }
                 LDADocument document(document_topics, model.num_topics());
@@ -422,6 +424,15 @@ namespace learning_lda {
         }
 
         std::cout << "word order done" << std::endl;
+        json << " ], \"word_doc_count\": [";
+
+        for(int i=0; i < num_words; i++){
+            json << word_doc_count[i];
+            if (i + 1 < num_words)
+                json << ", ";
+        }
+
+        std::cout << "idf vec done" << std::endl;
         json << " ], \"page_order\": [";
 
         for(int i=0; i < num_pages; i++){
