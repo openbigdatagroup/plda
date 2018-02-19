@@ -513,6 +513,7 @@ int main(int argc, char** argv) {
     string const base_req_lda_data_sql = "SELECT * from topic_modeling_lda_data where topic_request_id = ?";
     string const base_req_update_sql = "UPDATE topic_modeling_request set status = 6 where id = ?";
     string sql;
+    string request_sql;
 
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
@@ -631,12 +632,14 @@ int main(int argc, char** argv) {
             nontransaction N(C);
 
             /* Create SQL statement */
-            sql = base_topic_req_sql;
+            request_sql = base_topic_req_sql;
             pos = sql.find('?');
-            sql.replace(pos, 1, to_string(pk));
+            std::cout<< "what is wrong " << request_sql << std::endl;
+            request_sql.replace(pos, 1, to_string(pk));
+            std::cout<< "what is wrong " << request_sql << std::endl;
             pos = sql.find('?');
-            sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
-
+            request_sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
+            std::cout<< "what is wrong " << request_sql << std::endl;
             /* Execute SQL query */
             result requests( N.exec( sql ));
             request_exits = false;
@@ -774,15 +777,18 @@ int main(int argc, char** argv) {
         double max_loglikelihood = 0;
         unsigned int max_loglikelihood_stay_count = 0;
         bool is_max_loglikelihood_set = false;
-        
+        bool request_is_alive = true;
+        nontransaction N2(C);
+
         for (int iter = 0; iter < max_iteration; ++iter) {
-            if (myid == 0) {
-                std::cout << "Iteration " << iter << " ...\n";
-            }
             ParallelLDAModel model(num_topics, word_index_map);
             model.ComputeAndAllReduce(corpus);
             LDASampler sampler(alpha, beta, &model, NULL);
-            if (iter % 100 == 0) {
+            if (iter % 100 == 0 && iter && iter > 0) {
+                if (myid == 0) {
+                    std::cout << "Iteration " << iter << " ...\n";
+                }
+
                 double loglikelihood_local = 0;
                 double loglikelihood_global = 0;
                 for (list<LDADocument*>::const_iterator iter = corpus.begin();
@@ -811,16 +817,44 @@ int main(int argc, char** argv) {
                 if (max_loglikelihood_stay_count > 2){
                     break;
                 }
+                /* check if request is still alive */
+                if(myid == 0 && iter % 300 == 0){
+                    result requests( N2.exec(request_sql));
+                    request_is_alive = false;
+                    /* List down all the records */
+                    for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
+                        request_is_alive = true;
+                        break;
+                    }
+
+                    for (int process_id = 1; process_id < pnum; ++process_id){
+                        MPI_Send(&request_is_alive, 1, MPI_CXX_BOOL, process_id, 19, MPI_COMM_WORLD);
+                    }
+
+                }
+                else{
+                    MPI_Recv(&request_is_alive, 1, MPI_CXX_BOOL, 0, 19, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+                }
+
+                if (!request_is_alive)
+                    break;
             }
             sampler.DoIteration(&corpus, true, false);
         }
         ParallelLDAModel model(num_topics, word_index_map);
         model.ComputeAndAllReduce(corpus);
 
+        N2.commit();
+        if (myid == 0 && request_is_alive) {
+            try{
+                save_to_lm(pk, target_url_is_included, target_url, min_word_length, get_english, alpha,
+                           beta, word_index_map,model, C);
+            }
+            catch (const std::exception &e)
+            {
+                std::cout << "error" << std::endl;
+            }
 
-        if (myid == 0) {
-            save_to_lm(pk, target_url_is_included, target_url, min_word_length, get_english, alpha,
-                       beta, word_index_map,model, C);
 
         }
         FreeCorpus(&corpus);
@@ -830,7 +864,10 @@ int main(int argc, char** argv) {
             client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
             client.commit();
             lda_redis_unlock(client, token);
-            std::cout<< "request " << pk << " is finished" << std::endl;
+            if(request_is_alive)
+                std::cout<< "request " << pk << " is finished" << std::endl;
+            else
+                std::cout<< "request " << pk << " is deleted" << std::endl;
             std::cout << "waiting for another request" << std::endl;
         }
 
