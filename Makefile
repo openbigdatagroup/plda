@@ -33,5 +33,8 @@ db_test: db_test.cc $(OBJ)
 db_test_lda: db_test_lda.cc $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
 
+daemon_test: daemon_test.cc $(OBJ)
+	$(CC) $(CFLAGS) $(OBJ) $< -o $@ -lpqxx -lpq
+
 lm_plda: lm_plda.cc $(OBJ)
 	$(MPICC) $(CFLAGS) -std=c++14 $(OBJ) $< -o $@ -lpqxx -lpq  -ltacopie -lcpp_redis -lpthread
