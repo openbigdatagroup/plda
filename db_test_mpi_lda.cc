@@ -410,6 +410,22 @@ namespace learning_lda {
         }
         json << "], \"word_order\":[";
 
+        for(int i=0; i < num_words; i++){
+            json << "\"" << index_word_map[i] << "\"";
+            if (i + 1 < num_topics)
+                json << ", ";
+        }
+
+        json << "], \"page_order\":[";
+
+        for(int i=0; i < num_pages; i++){
+            json << "(" << "\"" << page_urls[i] << "\", " << page_order[i] << ")";
+            if (i + 1 < num_topics)
+                json << ", ";
+        }
+
+        json << "]";
+
     }
 }
 
