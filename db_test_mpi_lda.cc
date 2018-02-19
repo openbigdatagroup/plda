@@ -378,6 +378,8 @@ namespace learning_lda {
         }
         N.commit();
 
+        std::cout << "save to lm" << std::endl;
+
         std::ostringstream json;
         json << "'{ \"topics\": [";
 
@@ -392,6 +394,8 @@ namespace learning_lda {
             if(i + 1 < num_topics)
                 json << ", ";
         }
+        std::cout << "topic done" << std::endl;
+
         json << " ], \"page_topic_distribution\": [";
 
         for(int i=0; i < num_pages; i++){
@@ -405,6 +409,7 @@ namespace learning_lda {
             if(i + 1 < num_pages)
                 json << ", ";
         }
+        std::cout << "page topic done" << std::endl;
         json << " ], \"word_order\": [";
 
         for(int i=0; i < num_words; i++){
@@ -412,7 +417,7 @@ namespace learning_lda {
             if (i + 1 < num_topics)
                 json << ", ";
         }
-
+        std::cout << "word order done" << std::endl;
         json << " ], \"page_order\": [";
 
         for(int i=0; i < num_pages; i++){
@@ -422,14 +427,14 @@ namespace learning_lda {
         }
 
         json << "] }'";
-
+        std::cout << "page order done" << std::endl;
         sql = base_result_creation;
         pos = sql.find('?');
         sql.replace(pos, 1, to_string(pk));
         pos = sql.find('?');
         sql.replace(pos, 1, json.str());
 
-        work W(C);
+        work W(conn);
         W.exec(sql);
         W.commit();
 
@@ -788,8 +793,8 @@ int main(int argc, char** argv) {
 
 
         if (myid == 0) {
-            std::ofstream fout(flags.model_file_.c_str());
-            model.AppendAsString(fout);
+            //std::ofstream fout(flags.model_file_.c_str());
+            //model.AppendAsString(fout);
             save_to_lm(pk, target_url_is_included, target_url, min_word_length, get_english, flags.alpha_,
                     flags.beta_, word_index_map,model, C);
 
