@@ -771,7 +771,10 @@ int main(int argc, char** argv) {
              ++iter) {
             (*iter)->ResetWordIndex(word_index_map);
         }
-
+        double max_loglikelihood = 0;
+        unsigned int max_loglikelihood_stay_count = 0;
+        bool is_max_loglikelihood_set = false;
+        
         for (int iter = 0; iter < max_iteration; ++iter) {
             if (myid == 0) {
                 std::cout << "Iteration " << iter << " ...\n";
@@ -792,6 +795,21 @@ int main(int argc, char** argv) {
                               MPI_SUM, MPI_COMM_WORLD);
                 if (myid == 0) {
                     std::cout << "Loglikelihood: " << loglikelihood_global << std::endl;
+                }
+
+                if (!is_max_loglikelihood_set){
+                    max_loglikelihood = loglikelihood_global;
+                    is_max_loglikelihood_set = true;
+                }
+                else if (loglikelihood_global > max_loglikelihood){
+                    max_loglikelihood = loglikelihood_global;
+                    max_loglikelihood_stay_count = 0;
+                }
+                else if (loglikelihood_global <= max_loglikelihood){
+                    max_loglikelihood_stay_count += 1;
+                }
+                if (max_loglikelihood_stay_count > 2){
+                    break;
                 }
             }
             sampler.DoIteration(&corpus, true, false);
