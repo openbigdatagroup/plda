@@ -631,7 +631,7 @@ int main(int argc, char** argv) {
             auto pk_get_reply = get_pk.get();
 
             if(pk_get_reply.is_null()){
-                if (i + 1 < MIN_ITERATION){
+                if (k + 1 < MIN_ITERATION){
                     std::cout<< "waiting for the request" << std::endl;
                     std::this_thread::sleep_for(30s);
                 }
