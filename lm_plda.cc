@@ -541,6 +541,8 @@ int main(int argc, char** argv) {
     gethostname(char_hostname, 64);
     string hostname(char_hostname);
 
+    std::cout <<"hostname "<< hostname << std::endl;
+
     vector<string> deleting_hash_keys;
     deleting_hash_keys.push_back(hostname);
 
