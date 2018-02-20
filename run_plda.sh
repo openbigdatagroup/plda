@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source $HOME/.profile
+
 check_process() {
   echo "$ts: checking $1"
   [ "$1" = "" ]  && return 0
