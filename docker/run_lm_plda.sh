@@ -26,11 +26,6 @@ echo "Training..."
 docker exec plda-master bash -c "time mpiexec -f ./docker/hosts -n $NODE_NUM ./lm_plda"
 echo "Finished training."
 
-docker exec plda-master bash -c "sleep 80"
-
-docker cp plda-master:/var/log/plda_daemon.log .
-
-
 echo "Stop and remove containers..."
 docker stop plda-master
 docker rm plda-master

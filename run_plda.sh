@@ -10,5 +10,5 @@ check_process() {
 ts=`date +%T`
 echo "$ts: begin checking..."
 check_process "lm_plda"
-[ $? -eq 0 ] && echo "$ts: not running, restarting..." && mpiexec -f /home/dev/plda/lm_hosts -n 17 /home/dev/plda/lm_plda
+[ $? -eq 0 ] && echo "$ts: not running, restarting..." && mpiexec -f /home/dev/plda/lm_hosts -n 17 /home/dev/plda/lm_plda >> /var/log/lm_plda.log 2>&1
 

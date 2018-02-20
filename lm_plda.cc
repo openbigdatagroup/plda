@@ -52,6 +52,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "add_timestamp.h"
+
 #define STATUS_LDA_ANALYSIS 5
 #define STATUS_COMPLETE  6
 
@@ -530,6 +532,8 @@ int main(int argc, char** argv) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
+
+    AddTimeStamp ats( std::cout );
 
     cpp_redis::client client;
 

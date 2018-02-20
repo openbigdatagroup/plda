@@ -10,7 +10,7 @@ clean:
 	rm -rf $(OBJ_PATH)
 	rm -f lda mpi_lda infer db_test lm_plda
 
-OBJ_SRCS := cmd_flags.cc common.cc document.cc model.cc accumulative_model.cc sampler.cc
+OBJ_SRCS := cmd_flags.cc common.cc document.cc model.cc accumulative_model.cc sampler.cc add_timestamp.cc
 ALL_OBJ = $(patsubst %.cc, %.o, $(OBJ_SRCS))
 OBJ = $(addprefix $(OBJ_PATH)/, $(ALL_OBJ))
 
