@@ -53,7 +53,6 @@
 #include <fstream>
 
 #define STATUS_LDA_ANALYSIS 5
-#define STATUS_LDA_ANALYSIS 6
 #define STATUS_COMPLETE  6
 
 #define LOCK_NAME "lda_analysis"
@@ -683,33 +682,30 @@ int main(int argc, char** argv) {
             N.commit();
 
             /* Create a transactional object. */
+            work W(C);
+            bool is_already_done = false;
 
-            if (false){
-                work W(C);
+            /* if lda result exists, it means it is completed */
+            for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
+                /* Create  SQL UPDATE statement */
+                sql = base_req_update_sql;
+                pos = sql.find('?');
+                sql.replace(pos, 1, to_string(pk));
+                /* Execute SQL query */
+                W.exec( sql );
+                is_already_done = true;
+                std::cout << "request " << pk << " is already completed" << std::endl;
+                break;
+            }
+            W.commit();
 
-                bool is_already_done = false;
-
-                /* if lda result exists, it means it is completed */
-                for (result::const_iterator c = lda_data.begin(); c != lda_data.end(); ++c) {
-                    /* Create  SQL UPDATE statement */
-                    sql = base_req_update_sql;
-                    pos = sql.find('?');
-                    sql.replace(pos, 1, to_string(pk));
-                    /* Execute SQL query */
-                    W.exec( sql );
-                    is_already_done = true;
-                    std::cout << "request " << pk << " is already completed" << std::endl;
-                    break;
-                }
-                W.commit();
-
-                if (is_already_done)
-                    lda_redis_lock(client, token);
+            if (is_already_done)
+                lda_redis_lock(client, token);
                 client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
                 client.commit();
                 lda_redis_unlock(client, token);
                 continue;
-            }
+
             num_val_buffer[0] = pk;
             num_val_buffer[1] = min_word_length;
             if(target_url_is_included){
