@@ -60,7 +60,7 @@
 #define LOCK_TIMEOUT 300
 #define REDIS_LDA_HASH_NAME "lda_workers"
 
-#define MIN_ITERATION 1
+#define MIN_ITERATION 2
 
 using std::ifstream;
 using std::ofstream;
@@ -493,7 +493,7 @@ void lda_redis_unlock(cpp_redis::client& client, const string& token){
     auto lock_token_get_reply = lock_token_get.get();
     if(!lock_token_get_reply.is_null()){
         string lock_token_str = lock_token_get_reply.as_string();
-        std::cout<< "acutal token" << lock_token_str << std::endl;
+        // std::cout<< "acutal token" << lock_token_str << std::endl;
         if (lock_token_str == token){
             client.del(deleting_keys);
             client.commit();
@@ -530,13 +530,9 @@ int main(int argc, char** argv) {
     string sql;
     string request_sql;
 
-    std::cout << "before mpi init" << std::endl;
     MPI_Init(&argc, &argv);
-    std::cout << "after mpi init" << std::endl;
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-    std::cout << "after mpi rank" << std::endl;
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
-    std::cout << "after mpi size" << std::endl;
 
     cpp_redis::client client;
 
@@ -637,6 +633,7 @@ int main(int argc, char** argv) {
             auto pk_get_reply = get_pk.get();
 
             if(pk_get_reply.is_null()){
+                std::cout<< "waiting for the request" << std::endl;
                 std::this_thread::sleep_for(30s);
                 continue;
             }
