@@ -897,6 +897,8 @@ int main(int argc, char** argv) {
             num_val_buffer[0] = 0;
             MPI_Send(num_val_buffer, 3, MPI_INT, process_id, 0, MPI_COMM_WORLD);
         }
+
+        std::cout << "quit lm_plda" << std::endl;
     }
 
     MPI_Finalize();
