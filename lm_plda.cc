@@ -630,7 +630,7 @@ int main(int argc, char** argv) {
     int num_topics = 8;
     double alpha = 1.0 / 8.0;
     double beta = 1.0 / 8.0;
-    int max_iteration = 500;
+    int max_iteration = 5000;
 
     for(int k=0; k < MIN_ITERATION; k++){
         string token;
@@ -669,7 +669,7 @@ int main(int argc, char** argv) {
             request_sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
             /* Execute SQL query */
             result requests( N.exec( request_sql ));
-            request_exits = false;
+            request_exits = true;
             /* List down all the records */
             for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
                 request_exits = true;
@@ -683,9 +683,7 @@ int main(int argc, char** argv) {
             }
 
             if (!request_exits){
-                if (myid == 0){
-                    std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
-                }
+                std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
                 continue;
             }
 
@@ -736,6 +734,7 @@ int main(int argc, char** argv) {
                 num_val_buffer[3] = 0;
             }
 
+            std::cout << "send requst data to other machines" << std::endl;
             for (int process_id = 1; process_id < pnum; ++process_id){
                 MPI_Send(num_val_buffer, 4, MPI_INT, process_id, 0, MPI_COMM_WORLD);
 
