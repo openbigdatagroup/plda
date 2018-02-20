@@ -716,6 +716,8 @@ int main(int argc, char** argv) {
             std::cout<< "request not already completed " << std::endl;
 
             if (is_already_done)
+
+                std::cout << "request " << is_already_done << " is already completed" << std::endl;
                 lda_redis_lock(client, token);
                 client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
                 client.commit();
