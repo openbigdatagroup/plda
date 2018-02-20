@@ -514,9 +514,9 @@ int main(int argc, char** argv) {
     using learning_lda::save_to_lm;
 
     /* Open the log file */
-    std::ofstream out("/var/log/plda_daemon.log");
-    std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
-    std::cout.rdbuf(out.rdbuf());
+    //std::ofstream out("/var/log/plda_daemon.log");
+    //std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+    //std::cout.rdbuf(out.rdbuf());
 
     std::cout << "logging start" << std::endl;
 
