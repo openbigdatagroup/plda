@@ -715,14 +715,18 @@ int main(int argc, char** argv) {
 
             std::cout<< "request not already completed " << std::endl;
 
-            if (is_already_done)
-
+            if (is_already_done){
                 std::cout << "request " << is_already_done << " is already completed" << std::endl;
                 lda_redis_lock(client, token);
                 client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
                 client.commit();
                 lda_redis_unlock(client, token);
                 continue;
+            }
+
+
+
+            std::cout<< "request not already completed 2" << std::endl;
 
             num_val_buffer[0] = pk;
             num_val_buffer[1] = min_word_length;
