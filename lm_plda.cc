@@ -60,6 +60,8 @@
 #define LOCK_TIMEOUT 300
 #define REDIS_LDA_HASH_NAME "lda_workers"
 
+#define MIN_ITERATION 1
+
 using std::ifstream;
 using std::ofstream;
 using std::istringstream;
@@ -623,7 +625,7 @@ int main(int argc, char** argv) {
     double beta = 1.0 / 8.0;
     int max_iteration = 500;
 
-    for(int k=0; k < 2; k++){
+    for(int k=0; k < MIN_ITERATION; k++){
         string token;
         if (myid == 0){
             token = random_string(16);
