@@ -630,7 +630,7 @@ int main(int argc, char** argv) {
     int num_topics = 8;
     double alpha = 1.0 / 8.0;
     double beta = 1.0 / 8.0;
-    int max_iteration = 5000;
+    int max_iteration = 7000;
 
     for(int k=0; k < MIN_ITERATION; k++){
         string token;
@@ -687,8 +687,6 @@ int main(int argc, char** argv) {
                 continue;
             }
 
-            std::cout<< "request does exist " << std::endl;
-
             sql = base_req_lda_data_sql;
             pos = sql.find('?');
             sql.replace(pos, 1, to_string(pk));
@@ -708,25 +706,18 @@ int main(int argc, char** argv) {
                 /* Execute SQL query */
                 W.exec( sql );
                 is_already_done = true;
-                std::cout << "request " << pk << " is already completed" << std::endl;
                 break;
             }
+
             W.commit();
-
-            std::cout<< "request not already completed " << std::endl;
-
             if (is_already_done){
-                std::cout << "request " << is_already_done << " is already completed" << std::endl;
                 lda_redis_lock(client, token);
                 client.hdel(REDIS_LDA_HASH_NAME, deleting_hash_keys);
                 client.commit();
                 lda_redis_unlock(client, token);
+                std::cout << "request " << pk << " is already completed" << std::endl;
                 continue;
             }
-
-
-
-            std::cout<< "request not already completed 2" << std::endl;
 
             num_val_buffer[0] = pk;
             num_val_buffer[1] = min_word_length;
@@ -744,7 +735,6 @@ int main(int argc, char** argv) {
                 num_val_buffer[3] = 0;
             }
 
-            std::cout << "send requst data to other machines" << std::endl;
             for (int process_id = 1; process_id < pnum; ++process_id){
                 MPI_Send(num_val_buffer, 4, MPI_INT, process_id, 0, MPI_COMM_WORLD);
 
@@ -847,7 +837,7 @@ int main(int argc, char** argv) {
                 else if (loglikelihood_global <= max_loglikelihood){
                     max_loglikelihood_stay_count += 1;
                 }
-                if (max_loglikelihood_stay_count > 2){
+                if (max_loglikelihood_stay_count > 3){
                     break;
                 }
                 /* check if request is still alive */
@@ -861,13 +851,12 @@ int main(int argc, char** argv) {
                     }
 
                     for (int process_id = 1; process_id < pnum; ++process_id){
-                        std::cout << "send request status " << process_id << " ...\n";
+                        // std::cout << "send request status " << process_id << " ...\n";
                         MPI_Send(&request_is_alive, 1, MPI_CXX_BOOL, process_id, 19, MPI_COMM_WORLD);
                     }
 
                 }
                 else if(myid != 0 && iter % 300 == 0){
-                    std::cout << "receive request status " << myid << " ...\n";
                     MPI_Recv(&request_is_alive, 1, MPI_CXX_BOOL, 0, 19, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 }
 
@@ -903,6 +892,7 @@ int main(int argc, char** argv) {
                 std::cout<< "request " << pk << " is finished" << std::endl;
             else
                 std::cout<< "request " << pk << " is deleted" << std::endl;
+
             std::cout << "waiting for another request" << std::endl;
         }
 
