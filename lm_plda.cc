@@ -669,7 +669,7 @@ int main(int argc, char** argv) {
             request_sql.replace(pos, 1, to_string(STATUS_LDA_ANALYSIS));
             /* Execute SQL query */
             result requests( N.exec( request_sql ));
-            request_exits = true;
+            request_exits = false;
             /* List down all the records */
             for (result::const_iterator c = requests.begin(); c != requests.end(); ++c) {
                 request_exits = true;
@@ -686,6 +686,8 @@ int main(int argc, char** argv) {
                 std::cout << "uncompleted request " << pk << " does not exist" << std::endl;
                 continue;
             }
+
+            std::cout<< "request does exist " << std::endl;
 
             sql = base_req_lda_data_sql;
             pos = sql.find('?');
@@ -710,6 +712,8 @@ int main(int argc, char** argv) {
                 break;
             }
             W.commit();
+
+            std::cout<< "request not already completed " << std::endl;
 
             if (is_already_done)
                 lda_redis_lock(client, token);
