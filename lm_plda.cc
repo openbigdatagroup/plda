@@ -283,6 +283,8 @@ namespace learning_lda {
         string const base_result_creation = "INSERT INTO topic_modeling_lda_data (topic_request_id, result, "
                 "created_at) VALUES (?, ?, CURRENT_TIMESTAMP)";
 
+        string const base_req_update_sql = "UPDATE topic_modeling_request set status = 6 where id = ?";
+
         vector<string> index_word_map(word_index_map.size());
         for (map<string, int>::const_iterator iter = word_index_map.begin();
              iter != word_index_map.end(); ++iter) {
@@ -451,6 +453,11 @@ namespace learning_lda {
 
         work W(conn);
         W.exec(sql);
+
+        sql = base_req_update_sql;
+        pos = sql.find('?');
+        sql.replace(pos, 1, to_string(pk));
+        W.exec( sql );
         W.commit();
 
     }
