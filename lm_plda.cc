@@ -49,6 +49,16 @@
 #include "sampler.h"
 #include "cmd_flags.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+//#include <unistd.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+#include <iostream>
+#include <fstream>
+
 #define STATUS_LDA_ANALYSIS 5
 #define STATUS_LDA_ANALYSIS 6
 #define STATUS_COMPLETE  6
@@ -497,6 +507,62 @@ void lda_redis_unlock(cpp_redis::client& client, const string& token){
 }
 
 
+static void skeleton_daemon()
+{
+    pid_t pid;
+
+    /* Fork off the parent process */
+    pid = fork();
+
+    /* An error occurred */
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    /* Success: Let the parent terminate */
+    if (pid > 0)
+    {
+        std::cout << "parent exit" << std::endl;
+        exit(EXIT_SUCCESS);
+    }
+
+    /* On success: The child process becomes session leader */
+    if (setsid() < 0)
+        exit(EXIT_FAILURE);
+
+    /* Catch, ignore and handle signals */
+    //TODO: Implement a working signal handler */
+    signal(SIGCHLD, SIG_IGN);
+    signal(SIGHUP, SIG_IGN);
+
+    /* Fork off for the second time*/
+    pid = fork();
+
+    /* An error occurred */
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    /* Success: Let the parent terminate */
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    /* Set new file permissions */
+    umask(0);
+
+    /* Change the working directory to the root directory */
+    /* or another appropriated directory */
+    //chdir("/root/plda");
+
+    /* Close all open file descriptors */
+    int x;
+    for (x = sysconf(_SC_OPEN_MAX); x>=0; x--)
+    {
+        close (x);
+    }
+
+
+}
+
+
 int main(int argc, char** argv) {
     using learning_lda::LDACorpus;
     using learning_lda::LDAModel;
@@ -505,6 +571,17 @@ int main(int argc, char** argv) {
     using learning_lda::DistributelyLoadAndInitTrainingCorpus;
     using learning_lda::LDACmdLineFlags;
     using learning_lda::save_to_lm;
+
+
+    skeleton_daemon();
+
+    /* Open the log file */
+    std::ofstream out("/var/log/plda_daemon.log");
+    std::streambuf *coutbuf = std::cout.rdbuf(); //save old buf
+    std::cout.rdbuf(out.rdbuf());
+
+    std::cout << "logging start" << std::endl;
+
     int myid, pnum;
 
     //int pks[3] = {118, 258, 117};
@@ -515,9 +592,13 @@ int main(int argc, char** argv) {
     string sql;
     string request_sql;
 
+    std::cout << "before mpi init" << std::endl;
     MPI_Init(&argc, &argv);
+    std::cout << "after mpi init" << std::endl;
     MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+    std::cout << "after mpi rank" << std::endl;
     MPI_Comm_size(MPI_COMM_WORLD, &pnum);
+    std::cout << "after mpi size" << std::endl;
 
     cpp_redis::client client;
 
@@ -604,7 +685,7 @@ int main(int argc, char** argv) {
     int num_topics = 8;
     double alpha = 1.0 / 8.0;
     double beta = 1.0 / 8.0;
-    int max_iteration = 7000;
+    int max_iteration = 500;
 
     for(int k=0; k < 2; k++){
         string token;

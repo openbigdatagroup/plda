@@ -14,21 +14,28 @@ echo "Run dockers and collect ips..."
 # at least setting up 1 node called master
 docker run -v $(greadlink -f ..):/root/plda -d -h master --name plda-master -e DJANGO_SETTINGS_MODULE='docker' db_plda
 docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-master > hosts
-
+for((i=2; i<=$NODE_NUM; i++)); do
+  docker run -v $(greadlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i -e DJANGO_SETTINGS_MODULE='docker' db_plda
+  docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-node-$i >> hosts
+done
 
 echo "Building..."
-docker exec plda-master bash -c "cd /root/plda && make clean && make daemon_test"
+docker exec plda-master bash -c "cd /root/plda && make clean && make lm_plda"
 
-echo "executing"
-docker exec plda-master bash -c "./daemon_test"
+echo "Training..."
+docker exec plda-master bash -c "time mpiexec -f ./docker/hosts -n $NODE_NUM ./lm_plda"
+echo "Finished training."
 
-docker exec plda-master bash -c "sleep 20"
+docker exec plda-master bash -c "sleep 80"
 
+docker cp plda-master:/var/log/plda_daemon.log .
 
-docker cp plda-master:/var/log/daemon_test.log .
 
 echo "Stop and remove containers..."
 docker stop plda-master
 docker rm plda-master
-
+for((i=2; i<=$NODE_NUM; i++)); do
+  docker stop plda-node-$i
+  docker rm plda-node-$i
+done
 echo "Finished."
