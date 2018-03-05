@@ -872,7 +872,7 @@ int main(int argc, char** argv) {
             }
             catch (const std::exception &e)
             {
-                std::cout << "error" << std::endl;
+                std::cout << "error: " << e.what() << std::endl;
             }
 
 
