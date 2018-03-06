@@ -278,7 +278,7 @@ namespace learning_lda {
                     map<string, int> &word_index_map, LDAModel &model, connection& conn){
         string const base_page_topic_rel_sql = "SELECT pagedata_id from topic_modeling_url_page_data_topic_request "
                 "where topicmodelingrequest_id = ?";
-        string const base_page_sql = "SELECT word_dict, page_url from topic_modeling_url_page_data where id = ?";
+        string const base_page_sql = "SELECT word_dict from topic_modeling_url_page_data where id = ?";
 
         string const base_result_creation = "INSERT INTO topic_modeling_lda_data (topic_request_id, result, "
                 "created_at) VALUES (?, ?, CURRENT_TIMESTAMP)";
@@ -315,7 +315,7 @@ namespace learning_lda {
         int num_pages = page_topic_rel.size();
 
         int page_order[num_pages];
-        vector<string> page_urls(num_pages);
+        int page_ids[num_pages];
         double page_topics[num_pages][model.num_topics()];
 
         int page_order_index = 0;
@@ -329,9 +329,7 @@ namespace learning_lda {
             for (result::const_iterator c2 = page_data.begin(); c2 != page_data.end(); ++c2) {
                 string word_dict = c2[0].as<string>();
                 istringstream ss(word_dict);
-
-                string page_url = c2[1].as<string>();
-                page_urls[page_order_index] = page_url;
+                page_ids[page_order_index] = page_id;
 
                 // This is a document that I need to store in local memory.
                 string word;
@@ -438,7 +436,7 @@ namespace learning_lda {
         json << " ], \"page_order\": [";
 
         for(int i=0; i < num_pages; i++){
-            json << "[" << "\"" << page_urls[i] << "\", " << page_order[i] << "]";
+            json << "[" << page_ids[i] << ", " << page_order[i] << "]";
             if (i + 1 < num_pages)
                 json << ", ";
         }
@@ -605,7 +603,7 @@ int main(int argc, char** argv) {
     else{
         connection_str.replace(pos, 1, "127.0.0.1");
         if(myid == 0){
-            std::cout << "setting is null" << std::endl;
+            std::cout << "unknown setting: "<< django_setting << std::endl;
             client.connect("127.0.0.1", 6379);
             client.select(1);
             client.commit();
