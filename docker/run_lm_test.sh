@@ -12,7 +12,7 @@ echo "Setting up $NODE_NUM node"
 
 echo "Run dockers and collect ips..."
 # at least setting up 1 node called master
-docker run -v $(greadlink -f ..):/root/plda -d -h master --name plda-master -e DJANGO_SETTINGS_MODULE='lm_backend.settings_state' db_plda
+docker run -v $(greadlink -f ..):/root/plda -d -h master --name plda-master -e DJANGO_SETTINGS_MODULE='lm_backend.settings_stage' db_plda
 docker inspect --format '{{ .NetworkSettings.IPAddress }}' plda-master > hosts
 for((i=2; i<=$NODE_NUM; i++)); do
   docker run -v $(greadlink -f ..):/root/plda -d --link=plda-master:master --name plda-node-$i -e DJANGO_SETTINGS_MODULE='lm_backend.settings_stage' db_plda
