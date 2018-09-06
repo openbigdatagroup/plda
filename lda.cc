@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
   if (!flags.CheckTrainingValidity()) {
     return -1;
   }
-  srand(time(NULL));
+  srand(flags.pseudo_random_seed_);
   LDACorpus corpus;
   map<string, int> word_index_map;
   CHECK_GT(LoadAndInitTrainingCorpus(flags.training_data_file_,

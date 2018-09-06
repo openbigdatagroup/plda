@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  srand(time(NULL));
+  srand(flags.pseudo_random_seed_);
 
   LDACorpus corpus;
   set<string> allwords;

@@ -38,6 +38,7 @@ class LDACmdLineFlags {
   int         burn_in_iterations_;
   int         total_iterations_;
   std::string compute_likelihood_;
+  unsigned    pseudo_random_seed_;
 };
 
 }  // namespace learning_lda

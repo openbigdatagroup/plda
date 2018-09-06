@@ -52,7 +52,7 @@ int main(int argc, char** argv) {
   if (!flags.CheckInferringValidity()) {
     return -1;
   }
-  srand(time(NULL));
+  srand(flags.pseudo_random_seed_);
   map<string, int> word_index_map;
   ifstream model_fin(flags.model_file_.c_str());
   LDAModel model(model_fin, &word_index_map);
