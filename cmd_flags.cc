@@ -68,7 +68,7 @@ void LDACmdLineFlags::ParseCmdFlags(int argc, char** argv) {
       compute_likelihood_ = argv[i+1];
       ++i;
     } else if (0 == strcmp(argv[i], "--pseudo_random_seed")) {
-      pseudo_random_seed_ = atoi(argv[i+1]);
+      std::istringstream(argv[i+1]) >> pseudo_random_seed_;
       ++i;
     }
 
