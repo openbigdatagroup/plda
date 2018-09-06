@@ -32,7 +32,7 @@ LDACmdLineFlags::LDACmdLineFlags() {
   burn_in_iterations_ = -1;
   total_iterations_ = -1;
   compute_likelihood_ = "false";
-  pseudo_random_seed_ = time(NULL);
+  random_seed_ = time(NULL);
 }
 
 void LDACmdLineFlags::ParseCmdFlags(int argc, char** argv) {
@@ -68,7 +68,7 @@ void LDACmdLineFlags::ParseCmdFlags(int argc, char** argv) {
       compute_likelihood_ = argv[i+1];
       ++i;
     } else if (0 == strcmp(argv[i], "--pseudo_random_seed")) {
-      std::istringstream(argv[i+1]) >> pseudo_random_seed_;
+      std::istringstream(argv[i+1]) >> random_seed_;
       ++i;
     }
 
