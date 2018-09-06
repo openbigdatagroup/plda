@@ -75,9 +75,11 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
       * `beta`: Suggested to be 0.01
       * `num_topics`: The total number of topics.
       * `total_iterations`: The total number of GibbsSampling iterations.
-      * `burn_in_iterations`: After --burn\_in\_iterations iteration, the model will be almost converged. Then we will average models of the last (total\_iterations-burn\_in\_iterations) iterations as the final model. This only takes effect for single processor version. For example: you set total\_iterations to 200, you found that after 170 iterations, the model is almost converged. Then you could set burn\_in\_iterations to 170 so that the final model will be the average of the last 30 iterations.
+      * `burn_in_iterations`: After --burn\_in\_iterations iteration, the model will be almost converged Then we will average models of the last (total\_iterations-burn\_in\_iterations) iterations as the final model. This only takes effect for single processor version. For example: you set total\_iterations to 200, you found that after 170 iterations, the model is almost converged. Then you could set burn\_in\_iterations to 170 so that the final model will be the average of the last 30 iterations.
       * `model_file`: The output file of the trained model.
+      * `random_seed`: The random seed used to initialize pseudorandom.
       * `training_data_file`: The training data.
+
 
 
   * Trained Model
@@ -93,6 +95,7 @@ Parallel lda must be run in linux environment with g++ compiler and [mpich](http
       * `alpha` and `beta` should be the same with training.
       * `total_iterations`: The total number of GibbsSampling iterations for an unseen document to determine its word topics. This number needs not be as much as training, usually tens of iterations is enough.
       * `burn_in_iterations`: For an unseen document, we will average the document\_topic\_distribution of the last (total\_iterations-burn\_in\_iterations) iterations as the final document\_topic\_distribution.
+      * `random_seed`: The random seed used to initialize pseudorandom.
 
 
 # Example #
