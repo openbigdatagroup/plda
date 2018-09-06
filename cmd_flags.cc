@@ -67,7 +67,7 @@ void LDACmdLineFlags::ParseCmdFlags(int argc, char** argv) {
     } else if (0 == strcmp(argv[i], "--compute_likelihood")) {
       compute_likelihood_ = argv[i+1];
       ++i;
-    } else if (0 == strcmp(argv[i], "--pseudo_random_seed")) {
+    } else if (0 == strcmp(argv[i], "--random_seed")) {
       std::istringstream(argv[i+1]) >> random_seed_;
       ++i;
     }
