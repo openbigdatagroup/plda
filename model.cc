@@ -122,7 +122,8 @@ LDAModel::LDAModel(std::istream& in, map<string, int>* word_index_map) {
       std::istringstream ss(line);
       string word;
       double count_float;
-      CHECK(ss >> word);
+      ss >> word;
+      CHECK(word.size() > 0);
       while (ss >> count_float) {
         memory_alloc_.push_back((int64)count_float);
       }
